@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FC Universitatea Cluj — Match Insights</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #000;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+      --good: #16A34A;
+      --bad: #DC2626;
+      --warn: #F59E0B;
+      --info: #2563EB;
+      --bg-soft: #F9FAFB;
+    }
+    html, body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #fff; color: #111; }
+    .numeric { font-variant-numeric: tabular-nums; }
+    .page-title { font-weight: 800; letter-spacing: -0.02em; }
+    .brand-bar { background: #000; color: #fff; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand-bar .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: 0.02em; }
+    .brand-bar .logo span { color: #fff; }
+    .brand-bar .logo .bar { display: inline-block; width: 6px; height: 20px; background: #fff; margin-right: 6px; transform: translateY(3px); }
+    .tabs-bar { border-bottom: 1px solid var(--border); background: #fff; position: sticky; top: 0; z-index: 20; }
+    .nav-tabs .nav-link { color: var(--muted); font-weight: 600; border: none; border-bottom: 2px solid transparent; padding: 12px 18px; }
+    .nav-tabs .nav-link.active { color: #000; border-bottom-color: #000; background: none; }
+    .card-box { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; height: 100%; }
+    .card-box h6 { font-weight: 700; margin: 0 0 12px 0; display: flex; align-items: center; justify-content: space-between; }
+    .card-box .badge-ai { background: #000; color: #fff; font-size: 0.65rem; padding: 3px 6px; border-radius: 4px; letter-spacing: 0.05em; font-weight: 700; }
+    .summary-tile { background: var(--bg-soft); border-radius: 12px; padding: 16px; }
+    .summary-tile .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .summary-tile .value { font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; }
+    .summary-tile .sub { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .result-pill { display: inline-block; width: 24px; text-align: center; font-weight: 700; border-radius: 4px; padding: 2px 0; color: #fff; font-size: 0.85rem; }
+    .result-pill.W { background: var(--good); }
+    .result-pill.D { background: var(--warn); }
+    .result-pill.L { background: var(--bad); }
+    .chart-wrap { position: relative; height: 320px; }
+    .chart-wrap.tall { height: 420px; }
+    table.clean { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+    table.clean th, table.clean td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    table.clean th { background: var(--bg-soft); text-align: left; cursor: pointer; user-select: none; font-weight: 700; }
+    table.clean th.num, table.clean td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.clean tr:hover td { background: #FAFAFA; }
+    .dangerous-bar { position: relative; background: #F3F4F6; border-radius: 4px; height: 8px; overflow: hidden; }
+    .dangerous-bar .fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--bad); }
+    .score-chip { display: inline-block; background: #000; color: #fff; font-weight: 700; border-radius: 6px; padding: 2px 8px; font-size: 0.85rem; min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; }
+    .ai-card { background: linear-gradient(135deg, #FAFAFA, #F3F4F6); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .ai-card .headline { font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
+    .ai-card ul { padding-left: 20px; margin-bottom: 16px; }
+    .ai-card .metric-players { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .ai-card .mini-pl { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+    .ai-card .mini-pl .tag { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; font-weight: 600; }
+    .chat-fab { position: fixed; right: 24px; bottom: 24px; width: 56px; height: 56px; border-radius: 50%; background: #000; color: #fff; border: none; box-shadow: 0 6px 24px rgba(0,0,0,.25); font-size: 1.5rem; z-index: 50; cursor: pointer; }
+    .chat-drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 380px; max-width: 100vw; background: #fff; border-left: 1px solid var(--border); z-index: 100; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s ease; }
+    .chat-drawer.open { transform: translateX(0); }
+    .chat-drawer header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-weight: 700; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .chat-messages .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; }
+    .chat-messages .msg.user { background: #000; color: #fff; align-self: flex-end; }
+    .chat-messages .msg.assistant { background: var(--bg-soft); color: #111; align-self: flex-start; border: 1px solid var(--border); }
+    .chat-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px 16px; border-bottom: 1px solid var(--border); }
+    .chat-chips button { background: #fff; border: 1px solid var(--border); border-radius: 999px; font-size: 0.78rem; padding: 6px 10px; cursor: pointer; }
+    .chat-chips button:hover { background: var(--bg-soft); }
+    .chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+    .chat-input input { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.9rem; outline: none; }
+    .chat-input button { background: #000; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+    .chat-input button:disabled { opacity: 0.4; }
+    .skeleton { background: linear-gradient(90deg, #F3F4F6 0%, #E5E7EB 50%, #F3F4F6 100%); background-size: 200% 100%; animation: shimmer 1.3s infinite; border-radius: 8px; height: 220px; }
+    @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+    .empty-state { color: var(--muted); text-align: center; padding: 24px; font-size: 0.9rem; }
+    .btn-black { background: #000; color: #fff; border: 1px solid #000; font-weight: 600; }
+    .btn-black:hover { background: #111; color: #fff; }
+    .match-score-big { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.02em; }
+    .muted { color: var(--muted); }
+    .mini-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .mini-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<div class="brand-bar">
+  <div class="logo"><span class="bar"></span>FC UNIVERSITATEA CLUJ — MATCH INSIGHTS</div>
+  <div class="muted" style="color:#9CA3AF; font-size: 0.85rem;">Season 2024/25 · Self-analysis dashboard</div>
+</div>
+
+<div class="tabs-bar">
+  <ul class="nav nav-tabs px-3" id="mainTabs">
+    <li class="nav-item"><button class="nav-link active" data-tab="season">Season</button></li>
+    <li class="nav-item"><button class="nav-link" data-tab="match">Match</button></li>
+  </ul>
+</div>
+
+<div class="container-fluid py-4" style="max-width: 1400px;">
+
+  <!-- ============= SEASON TAB ============= -->
+  <div id="tab-season" class="tab-pane active">
+    <div class="row g-3 mb-3" id="season-summary-strip"></div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <div class="card-box">
+          <h6>Form over season <span class="muted" style="font-weight:400;font-size:0.8rem;">avg player score & ball-loss rate per match</span></h6>
+          <div class="chart-wrap"><canvas id="trendsChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8">
+        <div class="card-box">
+          <h6>Top 10 jucători Cluj (scor mediu, min 300')</h6>
+          <div class="chart-wrap tall"><canvas id="seasonScoresChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card-box">
+          <h6>Attack mix (sezon)</h6>
+          <div class="chart-wrap tall"><canvas id="seasonAttackChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6">
+        <div class="card-box">
+          <h6>Top 10 ball losers (sezon)</h6>
+          <div class="chart-wrap"><canvas id="seasonLossesChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="ai-card">
+          <h6 style="justify-content: flex-start; gap: 8px;">AI Insights <span class="badge-ai">AI</span>
+            <button class="btn btn-sm btn-black ms-auto" id="btn-gen-trends">Generate</button>
+          </h6>
+          <div id="ai-trends-body" class="empty-state">Apasă Generate pentru analiza AI a trendurilor sezonului.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= MATCH TAB ============= -->
+  <div id="tab-match" class="tab-pane" style="display:none;">
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <div class="card-box d-flex align-items-center gap-3 flex-wrap">
+          <label class="fw-bold me-2">Meci:</label>
+          <select id="match-select" class="form-select" style="max-width: 520px;"></select>
+          <div id="match-header" class="ms-auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6">
+        <div class="card-box">
+          <h6>Player scores (breakdown)</h6>
+          <div class="chart-wrap tall"><canvas id="matchScoresChart"></canvas></div>
+          <div class="mini-legend">
+            <span><span class="sw" style="background:#000"></span>Att</span>
+            <span><span class="sw" style="background:#4B5563"></span>Prog</span>
+            <span><span class="sw" style="background:#9CA3AF"></span>Pass</span>
+            <span><span class="sw" style="background:#2563EB"></span>Def</span>
+            <span><span class="sw" style="background:#DC2626"></span>Risk</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card-box">
+          <h6>Ball losses</h6>
+          <div class="row g-2">
+            <div class="col-5">
+              <div class="chart-wrap" style="height: 200px;"><canvas id="matchLossesDonut"></canvas></div>
+            </div>
+            <div class="col-7">
+              <div class="chart-wrap" style="height: 200px;"><canvas id="matchLossesBar"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-7">
+        <div class="card-box">
+          <h6>Line-breaking runs (proxy)</h6>
+          <div class="chart-wrap"><canvas id="matchLineBreaksChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card-box">
+          <h6>Attacking patterns</h6>
+          <div class="chart-wrap"><canvas id="matchAttackChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <div class="ai-card">
+          <h6 style="justify-content: flex-start; gap: 8px;">AI Match Report <span class="badge-ai">AI</span>
+            <button class="btn btn-sm btn-black ms-auto" id="btn-gen-report">Generate</button>
+          </h6>
+          <div id="ai-report-body" class="empty-state">Apasă Generate pentru raportul AI al meciului.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="card-box">
+          <h6>Jucători Cluj — toți</h6>
+          <div class="table-responsive">
+            <table class="clean" id="match-players-table">
+              <thead><tr>
+                <th data-sort="player_name">Jucător</th>
+                <th data-sort="position">Pos</th>
+                <th data-sort="minutes" class="num">Min</th>
+                <th data-sort="score" class="num">Score</th>
+                <th data-sort="goals" class="num">G</th>
+                <th data-sort="assists" class="num">A</th>
+                <th data-sort="xg" class="num">xG</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============= CHAT DRAWER ============= -->
+<button class="chat-fab" id="chat-fab" title="AI chat">💬</button>
+<div class="chat-drawer" id="chat-drawer">
+  <header>
+    <span>AI Chat <span class="badge-ai">AI</span></span>
+    <button class="btn-close" id="chat-close"></button>
+  </header>
+  <div class="chat-chips" id="chat-chips">
+    <button data-q="Cine e în formă ascendentă?">Cine e în formă?</button>
+    <button data-q="Cine pierde mingea periculos?">Cine pierde mingea?</button>
+    <button data-q="Recomandă titularii vs. CFR Cluj.">Titulari vs. CFR</button>
+    <button data-q="Care e tendința echipei în ultimele 5 meciuri?">Trend ultimele 5</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input">
+    <input id="chat-input" placeholder="Întreabă ceva despre echipă..." />
+    <button id="chat-send">Send</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const API = 'http://127.0.0.1:8000/api';
+const COLORS = {
+  black: '#000000', g700: '#4B5563', g400: '#9CA3AF', info: '#2563EB',
+  good: '#16A34A', bad: '#DC2626', warn: '#F59E0B',
+};
+const BREAK_COLORS = [COLORS.black, COLORS.g700, COLORS.g400, COLORS.info, COLORS.bad];
+
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+Chart.defaults.color = '#111';
+Chart.defaults.borderColor = '#E5E7EB';
+
+const charts = {};
+
+async function fetchJson(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`${r.status}: ${text}`);
+  }
+  return r.json();
+}
+
+// ---------- TABS ----------
+document.querySelectorAll('#mainTabs .nav-link').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#mainTabs .nav-link').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-season').style.display = (tab === 'season') ? '' : 'none';
+    document.getElementById('tab-match').style.display = (tab === 'match') ? '' : 'none';
+    if (tab === 'match' && !matchLoaded) loadMatchSelector();
+  });
+});
+
+// ---------- SEASON ----------
+async function loadSeason() {
+  try {
+    const [summary, playerScores, trends, losses, attack] = await Promise.all([
+      fetchJson(`${API}/season/summary/`),
+      fetchJson(`${API}/season/player-scores/`),
+      fetchJson(`${API}/season/trends/`),
+      fetchJson(`${API}/season/ball-losses/`),
+      fetchJson(`${API}/season/attacking-patterns/`),
+    ]);
+    renderSummaryStrip(summary);
+    renderTrendsChart(trends);
+    renderSeasonScores(playerScores.slice(0, 10));
+    renderSeasonLosses(losses.players.slice(0, 10));
+    renderSeasonAttack(attack.type_mix);
+  } catch (e) {
+    console.error(e);
+    alert('Failed to load season: ' + e.message);
+  }
+}
+
+function renderSummaryStrip(s) {
+  const tiles = [
+    { label: 'Record (W-D-L)', value: s.record, sub: `${s.matches_played} matches` },
+    { label: 'Goals', value: `${s.goals_for} : ${s.goals_against}`, sub: 'for : against' },
+    { label: 'xG', value: `${s.xg_for} : ${s.xg_against}`, sub: 'for : against' },
+    { label: 'Points per game', value: s.ppg, sub: `${s.wins*3 + s.draws} pts total` },
+  ];
+  const el = document.getElementById('season-summary-strip');
+  el.innerHTML = tiles.map(t => `
+    <div class="col-md-3 col-6">
+      <div class="summary-tile">
+        <div class="label">${t.label}</div>
+        <div class="value numeric">${t.value}</div>
+        <div class="sub">${t.sub}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderTrendsChart(trends) {
+  const ctx = document.getElementById('trendsChart');
+  if (charts.trends) charts.trends.destroy();
+  const labels = trends.map(t => `${t.is_home ? 'vs' : '@'} ${t.opponent}`);
+  charts.trends = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Avg player score', data: trends.map(t => t.avg_player_score), borderColor: COLORS.black, backgroundColor: COLORS.black, tension: 0.3, yAxisID: 'y' },
+        { label: 'Losses /90', data: trends.map(t => t.losses_per90), borderColor: COLORS.bad, backgroundColor: COLORS.bad, tension: 0.3, yAxisID: 'y1' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { maxRotation: 60, minRotation: 60, font: { size: 10 } } },
+        y: { position: 'left', title: { display: true, text: 'Player score' } },
+        y1: { position: 'right', title: { display: true, text: 'Losses /90' }, grid: { drawOnChartArea: false } },
+      },
+      plugins: { legend: { position: 'top', align: 'end' } }
+    }
+  });
+}
+
+function renderSeasonScores(players) {
+  const ctx = document.getElementById('seasonScoresChart');
+  if (charts.seasonScores) charts.seasonScores.destroy();
+  const labels = players.map(p => `${p.player_name} (${p.position || '-'})`);
+  const parts = ['att', 'prog', 'pass', 'def', 'risk'];
+  charts.seasonScores = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: parts.map((k, i) => ({
+        label: k.toUpperCase(),
+        data: players.map(p => p.breakdown[k]),
+        backgroundColor: BREAK_COLORS[i],
+        stack: 's',
+      })),
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true, title: { display: true, text: 'Component contribution (per-match avg)' } }, y: { stacked: true } },
+      plugins: { legend: { position: 'top', align: 'end' } },
+    }
+  });
+}
+
+function renderSeasonLosses(players) {
+  const ctx = document.getElementById('seasonLossesChart');
+  if (charts.seasonLosses) charts.seasonLosses.destroy();
+  charts.seasonLosses = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: players.map(p => p.player_name),
+      datasets: [
+        { label: 'Opp half losses', data: players.map(p => p.opp_half), backgroundColor: COLORS.g400, stack: 's' },
+        { label: 'Own half losses', data: players.map(p => p.own_half - p.dangerous), backgroundColor: COLORS.warn, stack: 's' },
+        { label: 'Dangerous own half', data: players.map(p => p.dangerous), backgroundColor: COLORS.bad, stack: 's' },
+      ],
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true } },
+    }
+  });
+}
+
+function renderSeasonAttack(mix) {
+  const ctx = document.getElementById('seasonAttackChart');
+  if (charts.seasonAttack) charts.seasonAttack.destroy();
+  charts.seasonAttack = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Wide', 'Central', 'Direct', 'Set piece'],
+      datasets: [{
+        label: 'Sezon',
+        data: [mix.wide, mix.central, mix.direct, mix.set_piece],
+        backgroundColor: 'rgba(0,0,0,0.15)',
+        borderColor: COLORS.black,
+        pointBackgroundColor: COLORS.black,
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+}
+
+// ---------- MATCH ----------
+let matchLoaded = false;
+let currentMatchId = null;
+
+async function loadMatchSelector() {
+  const sel = document.getElementById('match-select');
+  const matches = await fetchJson(`${API}/matches/`);
+  sel.innerHTML = matches.map(m => {
+    const label = `${m.cluj_is_home ? 'vs' : '@'} ${m.opponent} (${m.cluj_goals}-${m.opp_goals}) ${m.result}`;
+    return `<option value="${m.wy_id}">${label}</option>`;
+  }).join('');
+  sel.addEventListener('change', () => loadMatch(parseInt(sel.value)));
+  matchLoaded = true;
+  loadMatch(parseInt(sel.value));
+}
+
+async function loadMatch(wyId) {
+  currentMatchId = wyId;
+  document.getElementById('ai-report-body').innerHTML = `<span class="empty-state">Apasă Generate pentru raportul AI al meciului.</span>`;
+  try {
+    const [match, scores, losses, breaks, attack] = await Promise.all([
+      fetchJson(`${API}/matches/${wyId}/`),
+      fetchJson(`${API}/matches/${wyId}/player-scores/`),
+      fetchJson(`${API}/matches/${wyId}/ball-losses/`),
+      fetchJson(`${API}/matches/${wyId}/line-breaks/`),
+      fetchJson(`${API}/matches/${wyId}/attacking-patterns/`),
+    ]);
+    renderMatchHeader(match);
+    renderMatchScores(scores.slice(0, 10));
+    renderMatchLosses(losses);
+    renderMatchBreaks(breaks.slice(0, 10));
+    renderMatchAttack(attack.type_mix);
+    renderMatchTable(scores);
+  } catch (e) {
+    console.error(e);
+    alert('Failed match: ' + e.message);
+  }
+}
+
+function renderMatchHeader(m) {
+  const el = document.getElementById('match-header');
+  el.innerHTML = `
+    <div class="d-flex align-items-center gap-3">
+      <span class="result-pill ${m.result}">${m.result}</span>
+      <span class="match-score-big numeric">${m.cluj_goals} - ${m.opp_goals}</span>
+      <div class="muted" style="font-size: 0.9rem;">${m.cluj_is_home ? 'acasă' : 'deplasare'} cu <strong>${m.opponent}</strong></div>
+    </div>`;
+}
+
+function renderMatchScores(players) {
+  const ctx = document.getElementById('matchScoresChart');
+  if (charts.matchScores) charts.matchScores.destroy();
+  const labels = players.map(p => `${p.player_name} (${p.position || '-'})`);
+  const parts = ['att', 'prog', 'pass', 'def', 'risk'];
+  charts.matchScores = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: parts.map((k, i) => ({
+        label: k.toUpperCase(),
+        data: players.map(p => p.breakdown[k]),
+        backgroundColor: BREAK_COLORS[i],
+        stack: 's',
+      }))
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderMatchLosses(losses) {
+  const ctxD = document.getElementById('matchLossesDonut');
+  if (charts.matchLossesDonut) charts.matchLossesDonut.destroy();
+  const t = losses.team_totals;
+  charts.matchLossesDonut = new Chart(ctxD, {
+    type: 'doughnut',
+    data: {
+      labels: ['Own half (safe)', 'Opp half', 'Dangerous own half'],
+      datasets: [{ data: [Math.max(0, t.own_half - t.dangerous), t.opp_half, t.dangerous], backgroundColor: [COLORS.warn, COLORS.g400, COLORS.bad] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+  });
+  const ctxB = document.getElementById('matchLossesBar');
+  if (charts.matchLossesBar) charts.matchLossesBar.destroy();
+  const top5 = losses.players.slice(0, 5);
+  charts.matchLossesBar = new Chart(ctxB, {
+    type: 'bar',
+    data: {
+      labels: top5.map(p => p.player_name),
+      datasets: [
+        { label: 'Own half', data: top5.map(p => p.own_half - p.dangerous), backgroundColor: COLORS.warn, stack: 's' },
+        { label: 'Opp half', data: top5.map(p => p.opp_half), backgroundColor: COLORS.g400, stack: 's' },
+        { label: 'Dangerous', data: top5.map(p => p.dangerous), backgroundColor: COLORS.bad, stack: 's' },
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true, ticks: { font: { size: 10 } } }, y: { stacked: true, ticks: { font: { size: 10 } } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderMatchBreaks(players) {
+  const ctx = document.getElementById('matchLineBreaksChart');
+  if (charts.matchBreaks) charts.matchBreaks.destroy();
+  const parts = ['progressive_run', 'through_passes', 'final_third_passes', 'smart_passes'];
+  const labels = ['Prog. runs', 'Through', 'Final 3rd', 'Smart'];
+  charts.matchBreaks = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: players.map(p => p.player_name),
+      datasets: parts.map((k, i) => ({
+        label: labels[i],
+        data: players.map(p => p.breakdown[k]),
+        backgroundColor: BREAK_COLORS[i],
+        stack: 's',
+      }))
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true } },
+    }
+  });
+}
+
+function renderMatchAttack(mix) {
+  const ctx = document.getElementById('matchAttackChart');
+  if (charts.matchAttack) charts.matchAttack.destroy();
+  charts.matchAttack = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Wide', 'Central', 'Direct', 'Set piece'],
+      datasets: [{
+        label: 'Meci',
+        data: [mix.wide, mix.central, mix.direct, mix.set_piece],
+        backgroundColor: 'rgba(0,0,0,0.15)', borderColor: COLORS.black,
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+}
+
+let tableSortKey = 'score'; let tableSortDir = -1;
+function renderMatchTable(players) {
+  const tbody = document.querySelector('#match-players-table tbody');
+  const sorted = [...players].sort((a,b) => {
+    const av = a[tableSortKey]; const bv = b[tableSortKey];
+    if (typeof av === 'string') return av.localeCompare(bv) * tableSortDir;
+    return ((av || 0) - (bv || 0)) * tableSortDir;
+  });
+  tbody.innerHTML = sorted.map(p => `
+    <tr>
+      <td><strong>${p.player_name}</strong></td>
+      <td>${p.position || '-'}</td>
+      <td class="num">${p.minutes}</td>
+      <td class="num"><span class="score-chip">${p.score}</span></td>
+      <td class="num">${p.goals}</td>
+      <td class="num">${p.assists}</td>
+      <td class="num">${p.xg}</td>
+    </tr>`).join('');
+}
+document.querySelectorAll('#match-players-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.sort;
+    if (tableSortKey === k) tableSortDir *= -1;
+    else { tableSortKey = k; tableSortDir = (k === 'player_name' || k === 'position') ? 1 : -1; }
+    if (currentMatchId) loadMatchTableRefresh();
+  });
+});
+async function loadMatchTableRefresh() {
+  const scores = await fetchJson(`${API}/matches/${currentMatchId}/player-scores/`);
+  renderMatchTable(scores);
+}
+
+// ---------- AI BUTTONS ----------
+document.getElementById('btn-gen-report').addEventListener('click', async () => {
+  const el = document.getElementById('ai-report-body');
+  el.innerHTML = `<div class="skeleton"></div>`;
+  try {
+    const r = await fetchJson(`${API}/matches/${currentMatchId}/ai-report/`);
+    if (r.error) { el.innerHTML = `<div class="empty-state">${r.error}</div>`; return; }
+    el.innerHTML = renderReportHTML(r);
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
+});
+
+function renderReportHTML(r) {
+  return `
+    <div class="headline">${r.headline || ''}</div>
+    <ul>${(r.key_moments || []).map(m => `<li>${m}</li>`).join('')}</ul>
+    <div class="metric-players">
+      <div class="mini-pl">
+        <div class="tag">Best player</div>
+        <div><strong>${(r.best_player || {}).name || '-'}</strong> · <span class="score-chip">${(r.best_player || {}).score || '-'}</span></div>
+        <div class="muted" style="font-size:0.85rem;margin-top:4px;">${(r.best_player || {}).reason || ''}</div>
+      </div>
+      <div class="mini-pl">
+        <div class="tag">Worst player</div>
+        <div><strong>${(r.worst_player || {}).name || '-'}</strong> · <span class="score-chip" style="background:${COLORS.bad}">${(r.worst_player || {}).score || '-'}</span></div>
+        <div class="muted" style="font-size:0.85rem;margin-top:4px;">${(r.worst_player || {}).reason || ''}</div>
+      </div>
+    </div>
+    <p><strong>Tactical:</strong> ${r.tactical_takeaway || ''}</p>
+    <p><strong>Recomandare:</strong> ${r.recommendation || ''}</p>
+  `;
+}
+
+document.getElementById('btn-gen-trends').addEventListener('click', async () => {
+  const el = document.getElementById('ai-trends-body');
+  el.innerHTML = `<div class="skeleton"></div>`;
+  try {
+    const r = await fetchJson(`${API}/season/ai-trends/`);
+    if (r.error) { el.innerHTML = `<div class="empty-state">${r.error}</div>`; return; }
+    el.innerHTML = renderTrendsHTML(r);
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state">${e.message}</div>`;
+  }
+});
+
+function renderTrendsHTML(r) {
+  const section = (title, items, color) => {
+    if (!items || !items.length) return '';
+    return `<h6 style="margin-top:12px; color:${color}">${title}</h6>
+      <ul style="margin:0 0 0 16px; padding:0;">
+        ${items.map(i => `<li><strong>${i.name || i.player || ''}</strong> — ${i.reason || i.note || ''}</li>`).join('')}
+      </ul>`;
+  };
+  return `
+    ${section('▲ Rising players', r.rising_players, COLORS.good)}
+    ${section('▼ Declining players', r.declining_players, COLORS.bad)}
+    ${r.tactical_shifts && r.tactical_shifts.length ? `<h6 style="margin-top:12px">Tactical shifts</h6><ul style="margin:0 0 0 16px;">${r.tactical_shifts.map(s => `<li>${s}</li>`).join('')}</ul>` : ''}
+    ${section('⚠ Attention flags', r.attention_flags, COLORS.warn)}
+  `;
+}
+
+// ---------- CHAT ----------
+const chatMessages = [];
+const chatLog = document.getElementById('chat-messages');
+document.getElementById('chat-fab').addEventListener('click', () => {
+  document.getElementById('chat-drawer').classList.toggle('open');
+});
+document.getElementById('chat-close').addEventListener('click', () => {
+  document.getElementById('chat-drawer').classList.remove('open');
+});
+document.getElementById('chat-chips').addEventListener('click', (e) => {
+  if (e.target.tagName === 'BUTTON') sendChat(e.target.dataset.q);
+});
+document.getElementById('chat-send').addEventListener('click', () => {
+  const inp = document.getElementById('chat-input');
+  if (inp.value.trim()) { sendChat(inp.value.trim()); inp.value = ''; }
+});
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('chat-send').click();
+});
+async function sendChat(q) {
+  appendMsg('user', q);
+  chatMessages.push({ role: 'user', content: q });
+  const btn = document.getElementById('chat-send'); btn.disabled = true;
+  appendMsg('assistant', '...', 'typing');
+  try {
+    const r = await fetchJson(`${API}/ai/chat/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatMessages }),
+    });
+    replaceTyping(r.reply || r.error || '');
+    chatMessages.push({ role: 'assistant', content: r.reply || '' });
+  } catch (e) {
+    replaceTyping('Eroare: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+function appendMsg(role, content, cls) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role + (cls ? ' ' + cls : '');
+  div.textContent = content;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function replaceTyping(text) {
+  const typing = chatLog.querySelector('.typing');
+  if (typing) { typing.textContent = text; typing.classList.remove('typing'); }
+  else appendMsg('assistant', text);
+}
+
+// ---------- INIT ----------
+loadSeason();
+</script>
+</body>
+</html>

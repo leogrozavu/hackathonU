@@ -1,0 +1,393 @@
+"""Pure analytics functions on Match + Cluj players.
+
+All return JSON-serializable dicts/lists ready for JsonResponse.
+"""
+from collections import defaultdict
+
+from .models import Match, Player, PlayerMatchStats
+
+
+SCORE_SCALE = 0.3
+
+
+def _get(total, key):
+    return total.get(key) or 0
+
+
+def _cluj_stats(match):
+    return list(PlayerMatchStats.objects.filter(match=match, player__is_cluj=True).select_related('player'))
+
+
+def _compute_components(total, minutes):
+    """Return dict with the 5 components + raw total + per-90 score."""
+    att = (
+        30 * _get(total, 'goals')
+        + 15 * _get(total, 'assists')
+        + 20 * _get(total, 'xgShot')
+        + 10 * _get(total, 'xgAssist')
+        + 3 * _get(total, 'keyPasses')
+        + 2 * _get(total, 'smartPasses')
+        + 1.5 * _get(total, 'touchInBox')
+    )
+    prog = (
+        0.8 * _get(total, 'progressivePasses')
+        + 1.2 * _get(total, 'successfulPassesToFinalThird')
+        + 1.5 * _get(total, 'progressiveRun')
+        + 1.0 * _get(total, 'accelerations')
+        + 0.8 * _get(total, 'successfulDribbles')
+    )
+    passing = (
+        0.2 * _get(total, 'successfulPasses')
+        + 0.5 * _get(total, 'successfulForwardPasses')
+        - 0.3 * (_get(total, 'passes') - _get(total, 'successfulPasses'))
+    )
+    defense = (
+        2 * _get(total, 'interceptions')
+        + 1.5 * _get(total, 'slidingTackles')
+        + 1 * _get(total, 'clearances')
+        + 2 * _get(total, 'recoveries')
+        + 3 * _get(total, 'dangerousOpponentHalfRecoveries')
+        + 1.5 * _get(total, 'counterpressingRecoveries')
+        + 1 * _get(total, 'defensiveDuelsWon')
+        + 0.8 * _get(total, 'aerialDuelsWon')
+    )
+    risk = (
+        -2 * _get(total, 'dangerousOwnHalfLosses')
+        - 0.5 * _get(total, 'ownHalfLosses')
+        - 0.3 * (_get(total, 'losses') - _get(total, 'ownHalfLosses'))
+    )
+    raw = (att + prog + passing + defense + risk) * (90 / max(minutes, 15))
+    score = max(0, min(100, 50 + raw * SCORE_SCALE))
+    return {
+        'att': round(att, 2),
+        'prog': round(prog, 2),
+        'pass': round(passing, 2),
+        'def': round(defense, 2),
+        'risk': round(risk, 2),
+        'score': round(score, 1),
+    }
+
+
+def compute_player_scores(match):
+    out = []
+    for s in _cluj_stats(match):
+        total = (s.raw or {}).get('total') or {}
+        c = _compute_components(total, s.minutes)
+        out.append({
+            'player_id': s.player.wy_id,
+            'player_name': s.player.display_name(),
+            'position': s.position_code or s.player.position_code,
+            'minutes': s.minutes,
+            'score': c['score'],
+            'breakdown': {'att': c['att'], 'prog': c['prog'], 'pass': c['pass'], 'def': c['def'], 'risk': c['risk']},
+            'goals': _get(total, 'goals'),
+            'assists': _get(total, 'assists'),
+            'xg': round(_get(total, 'xgShot'), 2),
+        })
+    out.sort(key=lambda x: x['score'], reverse=True)
+    return out
+
+
+def compute_ball_loss_zones(match):
+    stats = _cluj_stats(match)
+    totals = {'own_half': 0, 'opp_half': 0, 'dangerous': 0}
+    players = []
+    for s in stats:
+        total = (s.raw or {}).get('total') or {}
+        losses = _get(total, 'losses')
+        own = _get(total, 'ownHalfLosses')
+        dangerous = _get(total, 'dangerousOwnHalfLosses')
+        opp = max(0, losses - own)
+        totals['own_half'] += own
+        totals['opp_half'] += opp
+        totals['dangerous'] += dangerous
+        players.append({
+            'player_id': s.player.wy_id,
+            'player_name': s.player.display_name(),
+            'position': s.position_code,
+            'minutes': s.minutes,
+            'losses': losses,
+            'own_half': own,
+            'opp_half': opp,
+            'dangerous': dangerous,
+            'losses_per90': round(losses * 90 / max(s.minutes, 15), 2),
+        })
+    players.sort(key=lambda x: (x['dangerous'], x['losses_per90']), reverse=True)
+    return {'team_totals': totals, 'players': players}
+
+
+def compute_line_breaking_runs(match):
+    out = []
+    for s in _cluj_stats(match):
+        total = (s.raw or {}).get('total') or {}
+        prog_run = _get(total, 'progressiveRun')
+        through = _get(total, 'successfulThroughPasses')
+        final3 = _get(total, 'successfulPassesToFinalThird')
+        smart = _get(total, 'successfulSmartPasses')
+        score = prog_run + through + final3 + 0.5 * smart
+        out.append({
+            'player_id': s.player.wy_id,
+            'player_name': s.player.display_name(),
+            'position': s.position_code,
+            'minutes': s.minutes,
+            'score': round(score, 2),
+            'breakdown': {
+                'progressive_run': prog_run,
+                'through_passes': through,
+                'final_third_passes': final3,
+                'smart_passes': smart,
+            },
+        })
+    out.sort(key=lambda x: x['score'], reverse=True)
+    return out
+
+
+def compute_attacking_patterns(match):
+    stats = _cluj_stats(match)
+    type_mix = {'wide': 0, 'central': 0, 'direct': 0, 'set_piece': 0}
+    creators = []
+    finishers = []
+    for s in stats:
+        total = (s.raw or {}).get('total') or {}
+        type_mix['wide'] += _get(total, 'successfulCrosses')
+        type_mix['central'] += _get(total, 'successfulThroughPasses') + _get(total, 'successfulSmartPasses')
+        type_mix['direct'] += _get(total, 'successfulLongPasses')
+        type_mix['set_piece'] += _get(total, 'corners') + _get(total, 'directFreeKicks')
+
+        creator_score = _get(total, 'shotAssists') + _get(total, 'xgAssist')
+        if creator_score > 0:
+            creators.append({
+                'player_name': s.player.display_name(),
+                'value': round(creator_score, 2),
+                'shot_assists': _get(total, 'shotAssists'),
+                'xg_assist': round(_get(total, 'xgAssist'), 2),
+            })
+        finisher_score = _get(total, 'xgShot') + 0.5 * _get(total, 'touchInBox')
+        if finisher_score > 0:
+            finishers.append({
+                'player_name': s.player.display_name(),
+                'value': round(finisher_score, 2),
+                'xg': round(_get(total, 'xgShot'), 2),
+                'touch_in_box': _get(total, 'touchInBox'),
+                'goals': _get(total, 'goals'),
+            })
+
+    creators.sort(key=lambda x: x['value'], reverse=True)
+    finishers.sort(key=lambda x: x['value'], reverse=True)
+    return {
+        'type_mix': type_mix,
+        'top_creators': creators[:5],
+        'finishers': finishers[:5],
+    }
+
+
+# ------ season aggregates ------
+
+def season_summary():
+    matches = list(Match.objects.all())
+    wins = sum(1 for m in matches if m.result == 'W')
+    draws = sum(1 for m in matches if m.result == 'D')
+    losses = sum(1 for m in matches if m.result == 'L')
+    gf = sum(m.cluj_goals for m in matches)
+    ga = sum(m.opp_goals for m in matches)
+
+    xg_for = xg_against = 0.0
+    for m in matches:
+        for s in PlayerMatchStats.objects.filter(match=m):
+            total = (s.raw or {}).get('total') or {}
+            x = _get(total, 'xgShot')
+            if s.player.is_cluj:
+                xg_for += x
+            else:
+                xg_against += x
+
+    ppg = (wins * 3 + draws) / max(len(matches), 1)
+
+    top_scorers = []
+    top_assists = []
+    cluj_players = Player.objects.filter(is_cluj=True)
+    for p in cluj_players:
+        goals = 0
+        assists = 0
+        xg = 0.0
+        for s in PlayerMatchStats.objects.filter(player=p):
+            t = (s.raw or {}).get('total') or {}
+            goals += _get(t, 'goals')
+            assists += _get(t, 'assists')
+            xg += _get(t, 'xgShot')
+        if goals > 0:
+            top_scorers.append({'player_name': p.display_name(), 'goals': goals, 'xg': round(xg, 2)})
+        if assists > 0:
+            top_assists.append({'player_name': p.display_name(), 'assists': assists})
+    top_scorers.sort(key=lambda x: x['goals'], reverse=True)
+    top_assists.sort(key=lambda x: x['assists'], reverse=True)
+
+    return {
+        'matches_played': len(matches),
+        'wins': wins,
+        'draws': draws,
+        'losses': losses,
+        'record': f'{wins}-{draws}-{losses}',
+        'goals_for': gf,
+        'goals_against': ga,
+        'xg_for': round(xg_for, 2),
+        'xg_against': round(xg_against, 2),
+        'ppg': round(ppg, 2),
+        'top_scorers': top_scorers[:10],
+        'top_assists': top_assists[:10],
+    }
+
+
+def season_player_scores(min_minutes=300):
+    player_data = defaultdict(lambda: {
+        'minutes': 0, 'matches': 0, 'att': 0, 'prog': 0, 'pass': 0, 'def': 0, 'risk': 0,
+        'goals': 0, 'assists': 0, 'xg': 0.0, 'score_sum': 0, 'scores': [],
+        'position': '',
+    })
+
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
+        total = (s.raw or {}).get('total') or {}
+        c = _compute_components(total, s.minutes)
+        pid = s.player.wy_id
+        d = player_data[pid]
+        d['minutes'] += s.minutes
+        d['matches'] += 1
+        d['att'] += c['att']
+        d['prog'] += c['prog']
+        d['pass'] += c['pass']
+        d['def'] += c['def']
+        d['risk'] += c['risk']
+        d['goals'] += _get(total, 'goals')
+        d['assists'] += _get(total, 'assists')
+        d['xg'] += _get(total, 'xgShot')
+        d['scores'].append(c['score'])
+        if not d['position'] and s.position_code:
+            d['position'] = s.position_code
+        d['player_name'] = s.player.display_name()
+        d['player_id'] = pid
+
+    out = []
+    for pid, d in player_data.items():
+        if d['minutes'] < min_minutes:
+            continue
+        avg_score = sum(d['scores']) / len(d['scores']) if d['scores'] else 0
+        out.append({
+            'player_id': pid,
+            'player_name': d['player_name'],
+            'position': d['position'],
+            'matches': d['matches'],
+            'minutes': d['minutes'],
+            'score': round(avg_score, 1),
+            'breakdown': {
+                'att': round(d['att'] / d['matches'], 2),
+                'prog': round(d['prog'] / d['matches'], 2),
+                'pass': round(d['pass'] / d['matches'], 2),
+                'def': round(d['def'] / d['matches'], 2),
+                'risk': round(d['risk'] / d['matches'], 2),
+            },
+            'goals': d['goals'],
+            'assists': d['assists'],
+            'xg': round(d['xg'], 2),
+        })
+    out.sort(key=lambda x: x['score'], reverse=True)
+    return out
+
+
+def season_trends():
+    rows = []
+    for m in Match.objects.all().order_by('wy_id'):
+        scores = []
+        losses = 0
+        minutes_total = 0
+        xgf = 0.0
+        xga = 0.0
+        for s in PlayerMatchStats.objects.filter(match=m).select_related('player'):
+            total = (s.raw or {}).get('total') or {}
+            x = _get(total, 'xgShot')
+            if s.player.is_cluj:
+                c = _compute_components(total, s.minutes)
+                scores.append(c['score'])
+                losses += _get(total, 'losses')
+                minutes_total += s.minutes
+                xgf += x
+            else:
+                xga += x
+        rows.append({
+            'match_id': m.wy_id,
+            'label': m.label,
+            'opponent': m.opponent,
+            'is_home': m.cluj_is_home,
+            'result': m.result,
+            'cluj_goals': m.cluj_goals,
+            'opp_goals': m.opp_goals,
+            'avg_player_score': round(sum(scores) / len(scores), 1) if scores else 0,
+            'losses_per90': round(losses * 90 / max(minutes_total, 1), 2),
+            'xg_for': round(xgf, 2),
+            'xg_against': round(xga, 2),
+        })
+    return rows
+
+
+def season_ball_losses():
+    players = defaultdict(lambda: {
+        'minutes': 0, 'matches': 0, 'losses': 0, 'own_half': 0, 'opp_half': 0, 'dangerous': 0,
+    })
+    totals = {'own_half': 0, 'opp_half': 0, 'dangerous': 0}
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
+        total = (s.raw or {}).get('total') or {}
+        losses = _get(total, 'losses')
+        own = _get(total, 'ownHalfLosses')
+        dangerous = _get(total, 'dangerousOwnHalfLosses')
+        opp = max(0, losses - own)
+        pid = s.player.wy_id
+        d = players[pid]
+        d['minutes'] += s.minutes
+        d['matches'] += 1
+        d['losses'] += losses
+        d['own_half'] += own
+        d['opp_half'] += opp
+        d['dangerous'] += dangerous
+        d['player_name'] = s.player.display_name()
+        d['player_id'] = pid
+        totals['own_half'] += own
+        totals['opp_half'] += opp
+        totals['dangerous'] += dangerous
+    out = []
+    for pid, d in players.items():
+        if d['minutes'] < 300:
+            continue
+        out.append({
+            'player_id': pid,
+            'player_name': d['player_name'],
+            'matches': d['matches'],
+            'minutes': d['minutes'],
+            'losses': d['losses'],
+            'own_half': d['own_half'],
+            'opp_half': d['opp_half'],
+            'dangerous': d['dangerous'],
+            'losses_per90': round(d['losses'] * 90 / max(d['minutes'], 1), 2),
+        })
+    out.sort(key=lambda x: (x['dangerous'], x['losses_per90']), reverse=True)
+    return {'team_totals': totals, 'players': out}
+
+
+def season_attacking_patterns():
+    type_mix = {'wide': 0, 'central': 0, 'direct': 0, 'set_piece': 0}
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True):
+        total = (s.raw or {}).get('total') or {}
+        type_mix['wide'] += _get(total, 'successfulCrosses')
+        type_mix['central'] += _get(total, 'successfulThroughPasses') + _get(total, 'successfulSmartPasses')
+        type_mix['direct'] += _get(total, 'successfulLongPasses')
+        type_mix['set_piece'] += _get(total, 'corners') + _get(total, 'directFreeKicks')
+    return {'type_mix': type_mix}
+
+
+def season_snapshot_for_ai():
+    """Compact dict used as grounding for AI chat + trend detection."""
+    return {
+        'summary': season_summary(),
+        'top_player_scores': season_player_scores()[:20],
+        'top_ball_losers': season_ball_losses()['players'][:10],
+        'attack_mix': season_attacking_patterns()['type_mix'],
+        'trends': season_trends(),
+    }
