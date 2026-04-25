@@ -133,6 +133,9 @@ def _generate(system_text: str, user_text: str, max_tokens: int = 1500, force_js
             system_instruction=system_text,
             max_output_tokens=max_tokens,
             temperature=0.4,
+            # Dezactivăm thinking — pentru output scurt nu ne trebuie raționament intern
+            # care consumă din bugetul de tokens vizibili
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         )
         if force_json:
             config.response_mime_type = 'application/json'
@@ -180,6 +183,7 @@ def _chat_generate(system_text: str, messages: list, max_tokens: int = 700) -> s
                 system_instruction=system_text,
                 max_output_tokens=max_tokens,
                 temperature=0.5,
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
         )
         text = resp.text or ''
@@ -345,6 +349,7 @@ def chat_with_tools(messages: list, snapshot: dict) -> dict:
                     tools=tools,
                     max_output_tokens=2000,
                     temperature=0.4,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
                 ),
             )
             # Inspect parts for function_calls
