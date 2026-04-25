@@ -299,7 +299,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
   <!-- Hero strip -->
   <div class="hero">
     <div>
-      <div class="kicker"><span>01 · RECORD</span><span class="trend" id="tile-record-trend">Locul 5</span></div>
+      <div class="kicker"><span>01 · RECORD</span><span class="trend" id="tile-record-trend"></span></div>
       <div class="big num" id="tile-record">20<span style="color:var(--muted-2);font-weight:700">–</span>6<span style="color:var(--muted-2);font-weight:700">–</span>9</div>
       <div class="sub" id="tile-record-sub">35 meciuri · 66 puncte total</div>
       <div class="record-pills" id="record-pills"></div>
@@ -310,12 +310,12 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
       <div class="sub">marcate · primite</div>
     </div>
     <div>
-      <div class="kicker"><span>03 · xG</span><span class="trend">+6.51</span></div>
+      <div class="kicker"><span>03 · xG</span><span class="trend" id="tile-xg-trend"></span></div>
       <div class="big split num">47.7<span class="vs">:</span><span class="minor">41.2</span></div>
       <div class="sub">expected · concedate</div>
     </div>
     <div>
-      <div class="kicker"><span>04 · PPG</span><span class="trend" style="color:var(--muted)">&#x2191;</span></div>
+      <div class="kicker"><span>04 · PPG</span><span class="trend" id="tile-ppg-trend"></span></div>
       <div class="big num">1.89</div>
       <div class="sub">puncte / meci</div>
     </div>
@@ -1130,6 +1130,26 @@ async function hydrateSeason(){
       setTileByLabel('goals', `${summary.goals_for ?? '—'} : ${summary.goals_against ?? '—'}`);
       setTileByLabel('xg', `${(+summary.xg_for||0).toFixed(2)} : ${(+summary.xg_against||0).toFixed(2)}`);
       setTileByLabel('ppg', (+summary.ppg||0).toFixed(2));
+      // Update sub-line for record tile
+      const totalPts = (summary.wins||0)*3 + (summary.draws||0);
+      const recSub = document.getElementById('tile-record-sub');
+      if (recSub) recSub.textContent = `${summary.matches_played||0} meciuri · ${totalPts} puncte total`;
+      // Goals trend: net goal difference
+      const gd = (summary.goals_for||0) - (summary.goals_against||0);
+      const gtEl = document.getElementById('tile-goals-trend');
+      if (gtEl) gtEl.textContent = (gd>=0?'+':'') + gd;
+      // xG trend: net xG difference (xG for - xG against)
+      const xgd = (+summary.xg_for||0) - (+summary.xg_against||0);
+      const xtEl = document.getElementById('tile-xg-trend');
+      if (xtEl) xtEl.textContent = (xgd>=0?'+':'') + xgd.toFixed(2);
+      // PPG arrow: up if >=1.5 (top half), flat if 1.0-1.5, down if <1.0
+      const ppg = +summary.ppg || 0;
+      const pEl = document.getElementById('tile-ppg-trend');
+      if (pEl) {
+        if (ppg >= 1.5) { pEl.textContent = '↑'; pEl.style.color = 'var(--good)'; }
+        else if (ppg >= 1.0) { pEl.textContent = '→'; pEl.style.color = 'var(--muted)'; }
+        else { pEl.textContent = '↓'; pEl.style.color = 'var(--bad)'; }
+      }
     }
     // Top 10 player scores
     const top10 = topScores.slice(0,10).map(adaptPlayerScore);
