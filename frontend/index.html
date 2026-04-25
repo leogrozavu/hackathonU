@@ -340,6 +340,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
 <div class="tabs">
   <button class="tab active" data-tab="season" onclick="switchTab('season')">Sezon</button>
   <button class="tab" data-tab="match" onclick="switchTab('match')">Meci</button>
+  <button class="tab" data-tab="players" onclick="switchTab('players')">Jucători</button>
   <div class="spacer"></div>
   <span class="path"><span id="path-current">/ sezon / overview</span></span>
 </div>
@@ -627,6 +628,98 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
 
   <div class="footer-credit">FC UNIVERSITATEA CLUJ · MATCH INSIGHTS · INTERNAL USE ONLY</div>
 
+</div>
+
+<!-- ============ PLAYERS TAB ============ -->
+<div id="tab-players" class="page" style="display:none">
+  <div class="card" style="margin-bottom:24px;display:flex;flex-wrap:wrap;align-items:center;gap:18px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase">SELECTEAZĂ JUCĂTOR</span>
+      <select id="player-select" style="min-width:280px;padding:8px 10px;border:1px solid var(--rule);border-radius:4px;background:#fff;font-family:'Manrope',sans-serif;font-size:.95rem;font-weight:600"></select>
+    </div>
+    <div id="player-header" style="display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-left:auto"></div>
+  </div>
+
+  <!-- Card Score & Form -->
+  <div class="section-label">
+    <span class="num-tag">§ 01</span>
+    <h3>Score & form pe sezon</h3>
+    <span class="rule"></span>
+    <span class="aside" title="Linia neagră = scor compus per meci. Linia gri = media sezonului. Stacked bar = breakdown mediu pe componente.">scor compus per meci · breakdown 5 componente</span>
+  </div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="chart-wrap tall"><canvas id="playerScoreLine"></canvas></div>
+    <div style="margin-top:14px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Breakdown mediu / meci</div>
+      <div class="chart-wrap" style="height:80px"><canvas id="playerBreakdownBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row: Ball Loss + Line Breaks -->
+  <div class="grid-50" style="margin-bottom:24px">
+    <div class="card">
+      <div class="meta-row">
+        <div>
+          <h4>Pierderi de minge — pe zone</h4>
+          <div class="desc" style="margin-top:4px">Estimare în 3 zone: treimea defensivă, mijloc, jumătatea adversă.</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:180px 1fr;gap:18px;align-items:center">
+        <div style="position:relative;width:180px;height:180px">
+          <canvas id="playerLossDonut"></canvas>
+          <div class="donut-center">
+            <div class="big num" id="player-loss-danger">0</div>
+            <div class="lbl">periculoase</div>
+          </div>
+        </div>
+        <div id="player-loss-stats" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="meta-row">
+        <div>
+          <h4>Line-breaking runs</h4>
+          <div class="desc" style="margin-top:4px"><abbr title="Curse cu mingea care progresează spre poarta adversă">Prog runs</abbr> · <abbr title="Pase printre fundași">Through</abbr> · <abbr title="Pase reușite în treimea adversă">Final 3rd</abbr> · <abbr title="Pase creative care sparg liniile">Smart</abbr></div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="playerLineBreakBar"></canvas></div>
+      <div id="player-linebreak-stats" style="margin-top:10px;display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.78rem"></div>
+    </div>
+  </div>
+
+  <!-- Card Attacking Patterns -->
+  <div class="section-label">
+    <span class="num-tag">§ 03</span>
+    <h3>Contribuție la pattern-uri de atac</h3>
+    <span class="rule"></span>
+    <span class="aside" title="Radar individual (negru) suprapus pe radar mediu echipă (gri). Vezi pe ce direcție de atac contribuie cel mai mult.">individual vs media echipă</span>
+  </div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="grid-60-40">
+      <div class="chart-wrap" style="height:280px"><canvas id="playerAttackRadar"></canvas></div>
+      <div id="player-attack-stats" style="display:flex;flex-direction:column;gap:10px;justify-content:center"></div>
+    </div>
+  </div>
+
+  <!-- AI Summary -->
+  <div class="ai-card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag-ai" title="Generat de Google Gemini pe baza datelor reale">★ AI</span>
+        <h4 style="font-family:'Fraunces',serif">AI Player Summary</h4>
+      </div>
+      <button class="btn sm primary" onclick="generatePlayerSummary()">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L13.5 8L20 9L15 13.5L16.5 20L12 16.5L7.5 20L9 13.5L4 9L10.5 8Z"/></svg>
+        Generate
+      </button>
+    </div>
+    <div id="player-ai-body" style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem">
+      Apasă <strong>Generate</strong> pentru analiză tactică narativă pe baza datelor reale.
+    </div>
+  </div>
+
+  <div class="footer-credit">FC UNIVERSITATEA CLUJ · MATCH INSIGHTS · INTERNAL USE ONLY</div>
 </div>
 
 <!-- ============ CHAT ============ -->
@@ -1110,11 +1203,16 @@ function switchTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
   document.getElementById('tab-season').style.display=t==='season'?'':'none';
   document.getElementById('tab-match').style.display=t==='match'?'':'none';
-  document.getElementById('path-current').textContent = t==='season'?'/ sezon / overview':'/ meci / selectat';
+  document.getElementById('tab-players').style.display=t==='players'?'':'none';
+  const path = t==='season'?'/ sezon / overview' : t==='match' ? '/ meci / selectat' : '/ jucător / profil';
+  document.getElementById('path-current').textContent = path;
   window.scrollTo({top:0,behavior:'instant'});
   // Re-render 3D pitch only if it's already been opened by user
   if(t==='match' && typeof renderPitch3D === 'function' && document.getElementById('pitch-card-wrap')?.style.display !== 'none'){
     setTimeout(()=>renderPitch3D(), 60);
+  }
+  if(t==='players' && typeof initPlayersTab === 'function'){
+    initPlayersTab();
   }
 }
 
@@ -2041,6 +2139,224 @@ function pitchUpdateOpponentLabel(){
   if(opt && oppEl){
     const m = opt.text.match(/(?:vs|@)\s+([^()]+)/i);
     if(m) oppEl.textContent = m[1].trim().toUpperCase();
+  }
+}
+
+/* =============== PLAYERS TAB =============== */
+let _playersTabInited = false;
+let _currentPlayer = null;
+
+async function initPlayersTab(){
+  if(_playersTabInited) return;
+  _playersTabInited = true;
+  const sel = document.getElementById('player-select');
+  try {
+    const list = await apiGet('/players/');
+    sel.innerHTML = list.map(p =>
+      `<option value="${p.wy_id}">${p.name} · ${(p.position||'').toUpperCase()} · ${p.matches}m · score ${p.score}${p.in_current_squad?'':' · ⚠ plecat'}</option>`
+    ).join('');
+    sel.addEventListener('change', () => loadPlayerDetail(+sel.value));
+    if (list.length) await loadPlayerDetail(+sel.value);
+  } catch(e){
+    sel.innerHTML = `<option>Eroare API: ${e.message}</option>`;
+  }
+}
+
+async function loadPlayerDetail(wyId){
+  document.getElementById('player-ai-body').innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem">Apasă <strong>Generate</strong> pentru analiză tactică narativă pe baza datelor reale.</div>`;
+  try {
+    const d = await apiGet(`/players/${wyId}/`);
+    _currentPlayer = d;
+    renderPlayerHeader(d);
+    renderPlayerScoreLine(d);
+    renderPlayerBreakdownBar(d);
+    renderPlayerLossDonut(d);
+    renderPlayerLossStats(d);
+    renderPlayerLineBreakBar(d);
+    renderPlayerLineBreakStats(d);
+    renderPlayerAttackRadar(d);
+    renderPlayerAttackStats(d);
+  } catch(e){
+    console.warn('player detail failed', e);
+  }
+}
+
+function renderPlayerHeader(d){
+  const p = d.player;
+  const initials = (p.name||'?').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+  const formCls = d.score.form_delta >= 1 ? 'good' : d.score.form_delta <= -1 ? 'bad' : '';
+  const formArrow = d.score.form_delta > 0.5 ? '↑' : d.score.form_delta < -0.5 ? '↓' : '→';
+  const squadBadge = p.in_current_squad
+    ? '<span style="background:#1E7A3A;color:#fff;font-size:.65rem;padding:3px 8px;border-radius:3px;letter-spacing:.06em;font-weight:700">ÎN LOT</span>'
+    : '<span style="background:#B8860B;color:#fff;font-size:.65rem;padding:3px 8px;border-radius:3px;letter-spacing:.06em;font-weight:700" title="A jucat pentru Cluj acest sezon, dar nu mai e la club">PLECAT MID-SEZON</span>';
+  document.getElementById('player-header').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px">
+      <span class="avatar" style="width:56px;height:56px;font-size:1.1rem">${initials}</span>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700">${p.name}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted)">${abbrPos(p.position_code)} · ${p.total_matches} meciuri · ${p.total_minutes}'</span>
+        <div>${squadBadge}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap">
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Season Score</div><div style="font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums">${d.score.season_avg}</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Last 5 avg</div><div style="font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums">${d.score.recent_avg}</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Form Δ</div><div class="${formCls}" style="font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums">${formArrow} ${Math.abs(d.score.form_delta)}</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Goluri / Asist</div><div style="font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums">${d.attack.goals} / ${d.totals.assists||0}</div></div>
+    </div>`;
+}
+
+function renderPlayerScoreLine(d){
+  const ctx = document.getElementById('playerScoreLine');
+  if(charts.playerScoreLine) charts.playerScoreLine.destroy();
+  const labels = d.per_match.map(m => `${m.home?'vs':'@'} ${(m.opponent||'').substring(0,10)}`);
+  const scores = d.per_match.map(m => m.score);
+  const avg = d.score.season_avg;
+  charts.playerScoreLine = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Score', data:scores, borderColor:'#0A0A0B', backgroundColor:'rgba(10,10,11,0.08)', tension:0.3, pointRadius:3, fill:true},
+        {label:`Media sezon (${avg})`, data:scores.map(()=>avg), borderColor:'#9A9A9F', borderDash:[6,4], pointRadius:0},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{x:{ticks:{maxRotation:60,minRotation:60,font:{size:9}}}, y:{title:{display:true,text:'Score'}}},
+      plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,font:{size:11}}}},
+    }
+  });
+}
+
+function renderPlayerBreakdownBar(d){
+  const ctx = document.getElementById('playerBreakdownBar');
+  if(charts.playerBreakdown) charts.playerBreakdown.destroy();
+  const b = d.score.breakdown_avg;
+  charts.playerBreakdown = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Atac','Progresie','Pase','Apărare','Risc'],
+      datasets:[{
+        data:[b.att, b.prog, b.pass, b.def, b.risk],
+        backgroundColor:['#0A0A0B','#27272A','#52525B','#3F3F46','#B42318'],
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      scales:{x:{grid:{color:'#F4F3EE'}},y:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.x.toFixed(1)}`}}}
+    }
+  });
+}
+
+function renderPlayerLossDonut(d){
+  const ctx = document.getElementById('playerLossDonut');
+  if(charts.playerLoss) charts.playerLoss.destroy();
+  const z = d.ball_loss.zones_proxy;
+  charts.playerLoss = new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Treime defensivă (periculoase)','Mijloc (own half)','Jumătatea adversă'],
+      datasets:[{
+        data:[z.own_def_third, z.own_mid, z.opp_half],
+        backgroundColor:['#B42318','#B8860B','#9A9A9F'],
+        borderWidth:2,borderColor:'#fff',
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}
+  });
+  document.getElementById('player-loss-danger').textContent = d.ball_loss.dangerous;
+}
+
+function renderPlayerLossStats(d){
+  const bl = d.ball_loss;
+  const rank = d.rank_in_squad.dangerous_losses;
+  const worst = bl.worst_match;
+  document.getElementById('player-loss-stats').innerHTML = `
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Total pierderi</span><strong style="font-variant-numeric:tabular-nums">${bl.total_losses}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pierderi în treimea defensivă proprie">Periculoase</span><strong class="bad" style="font-variant-numeric:tabular-nums">${bl.dangerous}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Per 90'</span><strong style="font-variant-numeric:tabular-nums">${bl.per90}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Loc în clasamentul Cluj la pierderi periculoase">Rank periculoase</span><strong style="font-variant-numeric:tabular-nums">${rank.rank}/${rank.total}</strong></div>
+    ${worst?`<div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Cel mai slab meci</span><strong style="font-variant-numeric:tabular-nums">${worst.opponent} (${worst.dangerous_losses}p)</strong></div>`:''}
+  `;
+}
+
+function renderPlayerLineBreakBar(d){
+  const ctx = document.getElementById('playerLineBreakBar');
+  if(charts.playerLineBreak) charts.playerLineBreak.destroy();
+  const lb = d.line_breaks;
+  charts.playerLineBreak = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Prog runs','Through','Final 3rd','Smart'],
+      datasets:[{
+        data:[lb.prog_run, lb.through_passes, lb.final_third_passes, lb.smart_passes],
+        backgroundColor:['#0A0A0B','#27272A','#52525B','#9A9A9F'],
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      scales:{x:{grid:{color:'#F4F3EE'}},y:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
+      plugins:{legend:{display:false}}
+    }
+  });
+}
+
+function renderPlayerLineBreakStats(d){
+  const lb = d.line_breaks;
+  document.getElementById('player-linebreak-stats').innerHTML = `
+    <div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.62rem">Total</span> <strong style="font-size:1rem">${lb.total}</strong></div>
+    <div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.62rem">Per 90'</span> <strong style="font-size:1rem">${lb.per90}</strong></div>
+  `;
+}
+
+function renderPlayerAttackRadar(d){
+  const ctx = document.getElementById('playerAttackRadar');
+  if(charts.playerAttack) charts.playerAttack.destroy();
+  const a = d.attack;
+  const t = d.team_attack_mix || {wide:1,central:1,direct:1,set_piece:1};
+  // Normalize team to per-player average (~1/14 of squad totals)
+  const teamPerPlayer = {
+    wide: t.wide / 14, central: t.central / 14, direct: t.direct / 14, set_piece: t.set_piece / 14
+  };
+  charts.playerAttack = new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['Wide (centrări)','Central (through/smart)','Direct (long)','Set piece'],
+      datasets:[
+        {label:'Jucător', data:[a.wide,a.central,a.direct,a.set_piece], backgroundColor:'rgba(10,10,11,0.20)', borderColor:'#0A0A0B', pointBackgroundColor:'#0A0A0B'},
+        {label:'Media echipă', data:[teamPerPlayer.wide,teamPerPlayer.central,teamPerPlayer.direct,teamPerPlayer.set_piece], backgroundColor:'rgba(154,154,159,0.10)', borderColor:'#9A9A9F', borderDash:[5,5], pointBackgroundColor:'#9A9A9F'},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,font:{size:10}}}}}
+  });
+}
+
+function renderPlayerAttackStats(d){
+  const a = d.attack;
+  const ranks = d.rank_in_squad;
+  const finishCls = a.finish_eff > 1 ? 'good' : a.finish_eff < -1 ? 'bad' : '';
+  document.getElementById('player-attack-stats').innerHTML = `
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Goluri</span><strong style="font-variant-numeric:tabular-nums">${a.goals} <span style="color:var(--muted);font-weight:400;font-size:.78rem">(rank ${ranks.goals.rank}/${ranks.goals.total})</span></strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Expected Goals — calitatea șuturilor">xG</span><strong style="font-variant-numeric:tabular-nums">${a.xg} <span style="color:var(--muted);font-weight:400;font-size:.78rem">(rank ${ranks.xg.rank}/${ranks.xg.total})</span></strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Goluri - xG: dacă pozitiv, peste-performanță la finalizare">Finish eff.</span><strong class="${finishCls}" style="font-variant-numeric:tabular-nums">${a.finish_eff>=0?'+':''}${a.finish_eff}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pase ce au dus la șut">Shot assists</span><strong style="font-variant-numeric:tabular-nums">${a.shot_assists}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Atingeri în careu">Touch in box</span><strong style="font-variant-numeric:tabular-nums">${a.touch_in_box}</strong></div>
+  `;
+}
+
+async function generatePlayerSummary(){
+  const el = document.getElementById('player-ai-body');
+  if(!_currentPlayer){ el.innerHTML = '<div style="color:var(--muted);padding:24px;text-align:center">Selectează un jucător întâi.</div>'; return; }
+  el.innerHTML = `<div class="skeleton" style="height:200px"></div>`;
+  try {
+    const r = await apiGet(`/players/${_currentPlayer.player.wy_id}/ai-summary/`);
+    if(r.error){ el.innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center"><strong>AI error:</strong> ${r.error}</div>`; return; }
+    const text = (r.summary || '').replace(/\n{2,}/g,'</p><p>').replace(/\n/g,'<br>');
+    el.innerHTML = `<div style="line-height:1.7;font-size:.95rem"><p>${text}</p></div>`;
+  } catch(e){
+    el.innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center"><strong>Eroare:</strong> ${e.message}</div>`;
   }
 }
 

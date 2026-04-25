@@ -229,6 +229,16 @@ def detect_trends(trends: list, player_season: list) -> dict:
         return {'error': f'AI error: {type(e).__name__}: {e}'}
 
 
+def generate_player_summary(detail: dict) -> str:
+    if not is_enabled():
+        return 'AI summary dezactivat (lipsește GEMINI_API_KEY sau ANTHROPIC_API_KEY).'
+    user_text = prompts.render_player_profile_prompt(detail)
+    try:
+        return _generate(prompts.SYSTEM_PLAYER_PROFILE, user_text, max_tokens=1500, force_json=False)
+    except Exception as e:
+        return f'Eroare AI: {type(e).__name__}: {e}'
+
+
 def tag_player(profile: dict, roster: list) -> dict:
     if not is_enabled():
         return {'name_guess': '', 'confidence': 0, 'reasoning': 'AI disabled'}

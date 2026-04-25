@@ -140,6 +140,27 @@ def season_ai_trends(request):
     return _ok(ai.detect_trends(trends, players[:25]))
 
 
+def players_list(request):
+    return _ok(analytics.players_list())
+
+
+def player_detail(request, wy_id):
+    detail = analytics.player_detail(wy_id)
+    if not detail:
+        return JsonResponse({'error': 'player not found'}, status=404)
+    return _ok(detail)
+
+
+def player_ai_summary(request, wy_id):
+    if not ai.is_enabled():
+        return JsonResponse({'error': 'AI disabled (set GEMINI_API_KEY)'}, status=503)
+    detail = analytics.player_detail(wy_id)
+    if not detail:
+        return JsonResponse({'error': 'player not found'}, status=404)
+    summary = ai.generate_player_summary(detail)
+    return _ok({'summary': summary})
+
+
 @csrf_exempt
 @require_http_methods(['POST'])
 def ai_chat(request):

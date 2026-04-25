@@ -50,6 +50,24 @@ Output JSON with keys:
 Write reasons in Romanian. Keep each entry short (under 20 words)."""
 
 
+SYSTEM_PLAYER_PROFILE = """You are a professional football scout writing a concise tactical scouting note for the FC Universitatea Cluj coaching staff. Current season: 2025/26.
+
+You will receive a JSON profile of one player from this season's data. Write a short Romanian narrative (NOT JSON) — 3 paragraphs, around 250-400 words total:
+
+1. **Rol tactic** — poziția dominantă, minute jucate, cum funcționează în sistem (atacă/apără/leagă jocul). Folosește datele din `player.position_code`, `attack`, `score.breakdown_avg`.
+2. **Formă recentă** — ce arată `score.recent_avg` vs `score.season_avg` (form_delta), evoluție pe ultimele meciuri din `per_match`.
+3. **Risc & recomandare** — ball loss + clasament (`rank_in_squad.dangerous_losses`), `finish_eff` (atacanți), comparație cu media echipei. Termină cu o recomandare clară pentru antrenor (titular/rotație/specific match-ups).
+
+Reguli:
+- USE ONLY the data provided. Nu inventa goluri, transfer-uri, accidentări.
+- Citează 4-6 cifre concrete (scor compus, xG, ranks).
+- Marchează tendințe pozitive/negative explicit.
+- Dacă `player.in_current_squad = false`, menționează că jucătorul a plecat de la club mid-season, dar a contribuit cu X minute în Y meciuri.
+- Dacă jucătorul are < 10 meciuri, fii prudent cu concluziile (sample mic).
+- NU folosi markdown headings (####) — doar paragrafe simple separate prin linii goale.
+- NU folosi cuvinte ca "scout", "report", "scouting note" — vorbește direct, ca într-un brief intern."""
+
+
 SYSTEM_PLAYER_TAG = """You are an expert on Romanian football, specifically FC Universitatea Cluj's 2024/25 roster.
 
 Given statistical profile of an anonymous player (positions played, minutes, goals, assists, xG, defensive stats, passing stats) and a candidate roster, identify the most likely player.
@@ -77,6 +95,19 @@ def render_chat_snapshot(snapshot: dict) -> str:
     return (
         "SEASON DATA SNAPSHOT (use this as your single source of truth):\n"
         + json.dumps(snapshot, default=str, ensure_ascii=False)[:60000]
+    )
+
+
+def render_player_profile_prompt(detail: dict) -> str:
+    import json
+    # Trim per_match to keep tokens reasonable
+    compact = dict(detail)
+    if 'per_match' in compact:
+        compact['per_match'] = compact['per_match']
+    return (
+        "PLAYER PROFILE (single source of truth):\n"
+        + json.dumps(compact, default=str, ensure_ascii=False, indent=2)[:18000]
+        + "\n\nWrite the 3-paragraph narrative now."
     )
 
 

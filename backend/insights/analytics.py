@@ -457,6 +457,192 @@ def player_form_series(window_last=8):
     return out
 
 
+def players_list():
+    """Compact list of Cluj players for the dropdown."""
+    out = []
+    for p in Player.objects.filter(is_cluj=True):
+        stats = PlayerMatchStats.objects.filter(player=p)
+        matches = stats.count()
+        if matches == 0:
+            continue
+        minutes = sum(s.minutes for s in stats)
+        scores = []
+        goals = 0
+        assists = 0
+        for s in stats:
+            total = (s.raw or {}).get('total') or {}
+            c = _compute_components(total, s.minutes)
+            scores.append(c['score'])
+            goals += _get(total, 'goals')
+            assists += _get(total, 'assists')
+        avg = sum(scores) / len(scores) if scores else 0
+        out.append({
+            'wy_id': p.wy_id,
+            'name': p.display_name(),
+            'position': p.position_code or '',
+            'in_current_squad': p.in_current_squad,
+            'matches': matches,
+            'minutes': minutes,
+            'score': round(avg, 1),
+            'goals': goals,
+            'assists': assists,
+        })
+    out.sort(key=lambda x: -x['score'])
+    return out
+
+
+def player_detail(wy_id: int):
+    """Full season profile of one player."""
+    try:
+        player = Player.objects.get(wy_id=wy_id)
+    except Player.DoesNotExist:
+        return None
+
+    matches_qs = list(PlayerMatchStats.objects.filter(player=player).select_related('match').order_by('match__wy_id'))
+    if not matches_qs:
+        return None
+
+    per_match = []
+    totals = defaultdict(float)
+    component_sum = {'att': 0, 'prog': 0, 'pass': 0, 'def': 0, 'risk': 0}
+    scores = []
+
+    field_keys = (
+        'goals', 'assists', 'xgShot', 'xgAssist', 'shots', 'shotsOnTarget',
+        'keyPasses', 'smartPasses', 'successfulPassesToFinalThird',
+        'progressivePasses', 'progressiveRun', 'accelerations', 'successfulDribbles',
+        'passes', 'successfulPasses', 'successfulForwardPasses',
+        'losses', 'ownHalfLosses', 'dangerousOwnHalfLosses',
+        'interceptions', 'slidingTackles', 'clearances', 'recoveries',
+        'dangerousOpponentHalfRecoveries', 'counterpressingRecoveries',
+        'duels', 'duelsWon', 'defensiveDuelsWon', 'aerialDuelsWon',
+        'successfulCrosses', 'successfulThroughPasses', 'successfulLongPasses',
+        'successfulSmartPasses', 'corners', 'directFreeKicks',
+        'shotAssists', 'touchInBox',
+    )
+
+    for s in matches_qs:
+        total = (s.raw or {}).get('total') or {}
+        c = _compute_components(total, s.minutes)
+        scores.append(c['score'])
+        component_sum['att'] += c['att']
+        component_sum['prog'] += c['prog']
+        component_sum['pass'] += c['pass']
+        component_sum['def'] += c['def']
+        component_sum['risk'] += c['risk']
+        for k in field_keys:
+            totals[k] += _get(total, k)
+        m = s.match
+        per_match.append({
+            'match_id': m.wy_id,
+            'opponent': m.opponent,
+            'home': m.cluj_is_home,
+            'result': m.result,
+            'score_match': f'{m.cluj_goals}-{m.opp_goals}',
+            'minutes': s.minutes,
+            'score': c['score'],
+            'goals': _get(total, 'goals'),
+            'assists': _get(total, 'assists'),
+            'xg': round(_get(total, 'xgShot'), 2),
+            'losses': _get(total, 'losses'),
+            'dangerous_losses': _get(total, 'dangerousOwnHalfLosses'),
+        })
+
+    n = len(matches_qs)
+    minutes_total = sum(s.minutes for s in matches_qs)
+    season_avg = round(sum(scores) / n, 1) if n else 0
+    recent = scores[-5:] if len(scores) >= 1 else []
+    recent_avg = round(sum(recent) / len(recent), 1) if recent else 0
+    form_delta = round(recent_avg - season_avg, 1)
+
+    breakdown_avg = {k: round(v / max(n, 1), 2) for k, v in component_sum.items()}
+
+    own = totals['ownHalfLosses']
+    opp = max(0, totals['losses'] - own)
+    dangerous = totals['dangerousOwnHalfLosses']
+    safe_own = max(0, own - dangerous)
+    ball_loss = {
+        'total_losses': int(totals['losses']),
+        'own_half': int(own),
+        'opp_half': int(opp),
+        'dangerous': int(dangerous),
+        'per90': round(totals['losses'] * 90 / max(minutes_total, 1), 2),
+        'zones_proxy': {
+            'own_def_third': int(dangerous),       # most dangerous = own defensive third
+            'own_mid': int(safe_own),              # the rest of own half = midfield zone
+            'opp_half': int(opp),
+        },
+        'worst_match': max(per_match, key=lambda m: m['dangerous_losses'], default=None),
+    }
+
+    line_breaks = {
+        'prog_run': int(totals['progressiveRun']),
+        'through_passes': int(totals['successfulThroughPasses']),
+        'final_third_passes': int(totals['successfulPassesToFinalThird']),
+        'smart_passes': int(totals['successfulSmartPasses']),
+    }
+    line_breaks['total'] = (line_breaks['prog_run'] + line_breaks['through_passes']
+                            + line_breaks['final_third_passes']
+                            + int(totals['successfulSmartPasses'] * 0.5))
+    line_breaks['per90'] = round(line_breaks['total'] * 90 / max(minutes_total, 1), 2)
+
+    attack = {
+        'wide': int(totals['successfulCrosses']),
+        'central': int(totals['successfulThroughPasses'] + totals['successfulSmartPasses']),
+        'direct': int(totals['successfulLongPasses']),
+        'set_piece': int(totals['corners'] + totals['directFreeKicks']),
+        'shot_assists': int(totals['shotAssists']),
+        'xg_assist': round(totals['xgAssist'], 2),
+        'touch_in_box': int(totals['touchInBox']),
+        'goals': int(totals['goals']),
+        'xg': round(totals['xgShot'], 2),
+        'finish_eff': round(totals['goals'] - totals['xgShot'], 2),
+    }
+
+    # Rank in squad
+    season_players = season_player_scores(min_minutes=0)
+    losses_data = season_ball_losses()['players']
+    rank_in_squad = {}
+
+    def rank_of(items, key, descending=True, my_id=wy_id):
+        sorted_items = sorted(items, key=lambda x: x.get(key, 0) or 0, reverse=descending)
+        for i, it in enumerate(sorted_items, 1):
+            if it.get('player_id') == my_id:
+                return {'rank': i, 'total': len(sorted_items)}
+        return {'rank': None, 'total': len(sorted_items)}
+
+    rank_in_squad['score'] = rank_of(season_players, 'score', True)
+    rank_in_squad['goals'] = rank_of(season_players, 'goals', True)
+    rank_in_squad['xg'] = rank_of(season_players, 'xg', True)
+    rank_in_squad['dangerous_losses'] = rank_of(losses_data, 'dangerous', True)
+
+    # Team-average context for comparison
+    team_attack_total = season_attacking_patterns()['type_mix']
+    return {
+        'player': {
+            'wy_id': player.wy_id,
+            'name': player.display_name(),
+            'position_code': player.position_code,
+            'in_current_squad': player.in_current_squad,
+            'total_matches': n,
+            'total_minutes': minutes_total,
+        },
+        'totals': {k: int(v) if v == int(v) else round(v, 2) for k, v in totals.items()},
+        'score': {
+            'season_avg': season_avg,
+            'recent_avg': recent_avg,
+            'form_delta': form_delta,
+            'breakdown_avg': breakdown_avg,
+        },
+        'per_match': per_match,
+        'ball_loss': ball_loss,
+        'line_breaks': line_breaks,
+        'attack': attack,
+        'team_attack_mix': team_attack_total,
+        'rank_in_squad': rank_in_squad,
+    }
+
+
 def head_to_head(opponent_name: str):
     """All Cluj matches vs a given opponent with per-player scores."""
     matches = Match.objects.filter(
