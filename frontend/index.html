@@ -858,14 +858,18 @@ function renderMatch(id){
   const rb=document.getElementById('m-result');
   rb.className='result-badge '+m.res;
   rb.textContent = m.res==='W'?'VICTORIE':m.res==='D'?'EGAL':'ÎNFRÂNGERE';
-  // last 5
+  // last 5 — last dot is the current match (highlighted)
   const last5El=document.getElementById('m-last5');
   const idx=FALLBACK.matches.indexOf(m);
-  const last5 = FALLBACK.matches.slice(Math.max(0,idx-4),idx).map(mm=>mm.res);
+  const last5 = FALLBACK.matches.slice(Math.max(0,idx-4),idx+1).map(mm=>mm.res);
   while(last5.length<5)last5.unshift('·');
-  last5El.innerHTML = last5.map(r=>{
+  last5El.innerHTML = last5.map((r,i)=>{
     const bg = r==='W'?'#1E7A3A':r==='D'?'#B8860B':r==='L'?'#B42318':'#3F3F46';
-    return `<span class="dot" style="background:${bg}">${r}</span>`;
+    const isCurrent = i === last5.length - 1;
+    const extra = isCurrent
+      ? 'box-shadow:0 0 0 2px #fff,0 0 0 4px #000;transform:scale(1.18);font-weight:800'
+      : '';
+    return `<span class="dot" style="background:${bg};${extra}" title="${isCurrent?'meci curent':''}">${r}</span>`;
   }).join('');
 
   // players
