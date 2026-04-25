@@ -4,6 +4,8 @@ All return JSON-serializable dicts/lists ready for JsonResponse.
 """
 from collections import defaultdict
 
+from django.db.models import Q
+
 from .models import Match, Player, PlayerMatchStats
 
 
@@ -73,6 +75,12 @@ def compute_player_scores(match):
     for s in _cluj_stats(match):
         total = (s.raw or {}).get('total') or {}
         c = _compute_components(total, s.minutes)
+        passes = _get(total, 'passes')
+        succ_passes = _get(total, 'successfulPasses')
+        duels = _get(total, 'duels')
+        duels_won = _get(total, 'duelsWon')
+        pass_pct = round(succ_passes * 100 / passes) if passes else 0
+        duels_pct = round(duels_won * 100 / duels) if duels else 0
         out.append({
             'player_id': s.player.wy_id,
             'player_name': s.player.display_name(),
@@ -83,6 +91,12 @@ def compute_player_scores(match):
             'goals': _get(total, 'goals'),
             'assists': _get(total, 'assists'),
             'xg': round(_get(total, 'xgShot'), 2),
+            'pass_pct': pass_pct,
+            'duels_pct': duels_pct,
+            'losses': _get(total, 'losses'),
+            'key_passes': _get(total, 'keyPasses'),
+            'shots': _get(total, 'shots'),
+            'interceptions': _get(total, 'interceptions'),
         })
     out.sort(key=lambda x: x['score'], reverse=True)
     return out
@@ -242,7 +256,7 @@ def season_player_scores(min_minutes=300):
     player_data = defaultdict(lambda: {
         'minutes': 0, 'matches': 0, 'att': 0, 'prog': 0, 'pass': 0, 'def': 0, 'risk': 0,
         'goals': 0, 'assists': 0, 'xg': 0.0, 'score_sum': 0, 'scores': [],
-        'position': '',
+        'position': '', 'passes': 0, 'succ_passes': 0, 'duels': 0, 'duels_won': 0, 'losses': 0,
     })
 
     for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
@@ -260,6 +274,11 @@ def season_player_scores(min_minutes=300):
         d['goals'] += _get(total, 'goals')
         d['assists'] += _get(total, 'assists')
         d['xg'] += _get(total, 'xgShot')
+        d['passes'] += _get(total, 'passes')
+        d['succ_passes'] += _get(total, 'successfulPasses')
+        d['duels'] += _get(total, 'duels')
+        d['duels_won'] += _get(total, 'duelsWon')
+        d['losses'] += _get(total, 'losses')
         d['scores'].append(c['score'])
         if not d['position'] and s.position_code:
             d['position'] = s.position_code
@@ -288,6 +307,9 @@ def season_player_scores(min_minutes=300):
             'goals': d['goals'],
             'assists': d['assists'],
             'xg': round(d['xg'], 2),
+            'pass_pct': round(d['succ_passes'] * 100 / d['passes']) if d['passes'] else 0,
+            'duels_pct': round(d['duels_won'] * 100 / d['duels']) if d['duels'] else 0,
+            'losses': d['losses'],
         })
     out.sort(key=lambda x: x['score'], reverse=True)
     return out
@@ -382,12 +404,114 @@ def season_attacking_patterns():
     return {'type_mix': type_mix}
 
 
+def player_form_series(window_last=8):
+    """For each Cluj player, return ordered per-match score history.
+
+    Enables AI to detect rising/declining form, head-to-head trends.
+    """
+    matches = list(Match.objects.all().order_by('wy_id'))
+    match_id_to_label = {m.wy_id: {
+        'label': m.label, 'opp': m.opponent, 'home': m.cluj_is_home,
+        'score': f'{m.cluj_goals}-{m.opp_goals}', 'result': m.result,
+    } for m in matches}
+
+    series = {}
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player', 'match'):
+        total = (s.raw or {}).get('total') or {}
+        c = _compute_components(total, s.minutes)
+        pid = s.player.wy_id
+        entry = series.setdefault(pid, {
+            'player_id': pid,
+            'player_name': s.player.display_name(),
+            'matches': [],
+        })
+        entry['matches'].append({
+            'match_id': s.match.wy_id,
+            'opponent': match_id_to_label[s.match.wy_id]['opp'],
+            'home': match_id_to_label[s.match.wy_id]['home'],
+            'result': match_id_to_label[s.match.wy_id]['result'],
+            'score_match': match_id_to_label[s.match.wy_id]['score'],
+            'minutes': s.minutes,
+            'score': c['score'],
+            'goals': _get(total, 'goals'),
+            'assists': _get(total, 'assists'),
+            'xg': round(_get(total, 'xgShot'), 2),
+            'dangerous_losses': _get(total, 'dangerousOwnHalfLosses'),
+        })
+
+    # Sort each player's matches by wy_id (chronological-ish)
+    out = []
+    for entry in series.values():
+        entry['matches'].sort(key=lambda x: x['match_id'])
+        recent = entry['matches'][-window_last:]
+        recent_avg = round(sum(m['score'] for m in recent) / len(recent), 1) if recent else 0
+        season_avg = round(sum(m['score'] for m in entry['matches']) / len(entry['matches']), 1) if entry['matches'] else 0
+        entry['season_avg_score'] = season_avg
+        entry['recent_avg_score'] = recent_avg
+        entry['form_delta'] = round(recent_avg - season_avg, 1)
+        entry['recent_matches'] = recent
+        entry['total_matches'] = len(entry['matches'])
+        del entry['matches']
+        out.append(entry)
+    out.sort(key=lambda x: -x['season_avg_score'])
+    return out
+
+
+def head_to_head(opponent_name: str):
+    """All Cluj matches vs a given opponent with per-player scores."""
+    matches = Match.objects.filter(
+        Q(home_team=opponent_name) | Q(away_team=opponent_name)
+    ).order_by('wy_id')
+    out = []
+    for m in matches:
+        if opponent_name not in (m.home_team, m.away_team):
+            continue
+        players = []
+        for s in PlayerMatchStats.objects.filter(match=m, player__is_cluj=True).select_related('player'):
+            total = (s.raw or {}).get('total') or {}
+            c = _compute_components(total, s.minutes)
+            players.append({
+                'name': s.player.display_name(),
+                'pos': s.position_code,
+                'min': s.minutes,
+                'score': c['score'],
+                'g': _get(total, 'goals'),
+                'a': _get(total, 'assists'),
+            })
+        players.sort(key=lambda p: -p['score'])
+        out.append({
+            'match_id': m.wy_id,
+            'label': m.label,
+            'result': m.result,
+            'score': f'{m.cluj_goals}-{m.opp_goals}',
+            'home': m.cluj_is_home,
+            'players': players[:14],
+        })
+    return out
+
+
 def season_snapshot_for_ai():
-    """Compact dict used as grounding for AI chat + trend detection."""
+    """Rich dict used as grounding for AI chat + trend detection."""
+    current_ids = set(Player.objects.filter(in_current_squad=True).values_list('wy_id', flat=True))
+    players_form = player_form_series(window_last=5)
+    for pf in players_form:
+        pf['currently_at_cluj'] = pf['player_id'] in current_ids
+
+    current_squad = [
+        {'name': p.display_name(), 'position': p.position_code, 'appearances': p.appearances}
+        for p in Player.objects.filter(in_current_squad=True).order_by('-appearances')
+    ]
+    season_only = [
+        {'name': p.display_name(), 'position': p.position_code, 'appearances': p.appearances,
+         'note': 'played this season for Cluj but no longer at the club'}
+        for p in Player.objects.filter(is_cluj=True, in_current_squad=False)
+    ]
     return {
         'summary': season_summary(),
-        'top_player_scores': season_player_scores()[:20],
+        'current_squad': current_squad,
+        'players_who_left_mid_season': season_only,
+        'players_form': players_form,
         'top_ball_losers': season_ball_losses()['players'][:10],
         'attack_mix': season_attacking_patterns()['type_mix'],
-        'trends': season_trends(),
+        'match_trends': season_trends(),
     }

@@ -55,6 +55,7 @@ MIDDLEWARE = [
 CORS_ALLOW_ALL_ORIGINS = True
 CLUJ_NAME = "Universitatea Cluj"
 ANTHROPIC_API_KEY = __import__('os').getenv('ANTHROPIC_API_KEY', '')
+GEMINI_API_KEY = __import__('os').getenv('GEMINI_API_KEY', '')
 
 ROOT_URLCONF = 'smi.urls'
 

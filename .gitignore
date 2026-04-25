@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# Django
+*.log
+local_settings.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Env
+.env
+.env.local
+
+# DB (uncomment if you want SQLite excluded)
+# *.sqlite3

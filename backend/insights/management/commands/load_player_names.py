@@ -44,26 +44,42 @@ class Command(BaseCommand):
             self.stdout.write(f'Inferred Cluj teamId = {team_id} ({teams[team_id]} hits)')
 
         # Update all existing Players
+        # is_cluj logic: stay True if the player has played >= 4 matches (regardless of currentTeamId),
+        # OR if currentTeamId points to Cluj now. This keeps players who transferred mid-season flagged.
         updated_names = 0
-        reflag_cluj = 0
-        reflag_not_cluj = 0
+        upgraded = 0
+        kept_mid_season = 0
+        demoted = 0
         for player in Player.objects.all():
             p = by_id.get(player.wy_id)
             if not p:
                 continue
             new_name = (p.get('shortName') or f"{p.get('firstName','')} {p.get('lastName','')}").strip()
-            new_is_cluj = (p.get('currentTeamId') == team_id)
+            current_team_is_cluj = (p.get('currentTeamId') == team_id)
+
+            if current_team_is_cluj:
+                new_is_cluj = True
+            elif player.appearances >= 4:
+                new_is_cluj = True  # mid-season transfer — keep flagged
+                if player.is_cluj:
+                    kept_mid_season += 1
+            else:
+                new_is_cluj = False
+
             changed = False
             if new_name and new_name != player.name:
                 player.name = new_name
                 updated_names += 1
                 changed = True
             if player.is_cluj != new_is_cluj:
-                player.is_cluj = new_is_cluj
                 if new_is_cluj:
-                    reflag_cluj += 1
+                    upgraded += 1
                 else:
-                    reflag_not_cluj += 1
+                    demoted += 1
+                player.is_cluj = new_is_cluj
+                changed = True
+            if player.in_current_squad != current_team_is_cluj:
+                player.in_current_squad = current_team_is_cluj
                 changed = True
             if not player.position_code and p.get('role'):
                 player.position_code = (p['role'].get('code2') or '').lower()
@@ -73,5 +89,5 @@ class Command(BaseCommand):
 
         cluj_count = Player.objects.filter(is_cluj=True).count()
         self.stdout.write(self.style.SUCCESS(
-            f'Updated {updated_names} names. Re-flagged +{reflag_cluj} -{reflag_not_cluj}. Total Cluj: {cluj_count}.'
+            f'Updated {updated_names} names. Upgraded +{upgraded}. Kept mid-season transfers: {kept_mid_season}. Demoted -{demoted}. Total Cluj: {cluj_count}.'
         ))

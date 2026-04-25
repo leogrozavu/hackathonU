@@ -32,7 +32,8 @@ class Match(models.Model):
 class Player(models.Model):
     wy_id = models.BigIntegerField(primary_key=True)
     name = models.CharField(max_length=100, default='')
-    is_cluj = models.BooleanField(default=False)
+    is_cluj = models.BooleanField(default=False)  # anyone who played for Cluj this season
+    in_current_squad = models.BooleanField(default=False)  # currently at Cluj per players.json snapshot
     position_code = models.CharField(max_length=10, blank=True, default='')
     appearances = models.IntegerField(default=0)
 

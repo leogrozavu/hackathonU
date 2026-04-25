@@ -80,18 +80,35 @@ def match_ai_report(request, wy_id):
     if not ai.is_enabled():
         return JsonResponse({'error': 'AI disabled (set ANTHROPIC_API_KEY)'}, status=503)
     m = get_object_or_404(Match, wy_id=wy_id)
+    player_scores = analytics.compute_player_scores(m)
     payload = {
         'label': m.label,
         'score': f'{m.cluj_goals}-{m.opp_goals}',
         'cluj_is_home': m.cluj_is_home,
         'opponent': m.opponent,
         'result': m.result,
-        'player_scores': analytics.compute_player_scores(m)[:10],
+        'player_scores': player_scores[:12],
         'ball_losses': analytics.compute_ball_loss_zones(m),
         'line_breaks': analytics.compute_line_breaking_runs(m)[:8],
         'attacking_patterns': analytics.compute_attacking_patterns(m),
     }
     report = ai.generate_match_report(payload)
+
+    # Fallback: if AI left best/worst player incomplete, fill from data.
+    if player_scores:
+        meaningful = [p for p in player_scores if p['minutes'] >= 15]
+        if meaningful:
+            top = max(meaningful, key=lambda x: x['score'])
+            bot = min(meaningful, key=lambda x: x['score'])
+            bp = report.get('best_player') or {}
+            if not bp.get('name') or bp.get('name') == '—' or not bp.get('score'):
+                report['best_player'] = {'name': top['player_name'], 'score': top['score'],
+                                         'reason': bp.get('reason') or f"Scor {top['score']} în {top['minutes']} min, {top['goals']} goluri."}
+            wp = report.get('worst_player') or {}
+            if not wp.get('name') or wp.get('name') == '—' or not wp.get('score'):
+                report['worst_player'] = {'name': bot['player_name'], 'score': bot['score'],
+                                          'reason': wp.get('reason') or f"Scor minim al meciului ({bot['score']}) în {bot['minutes']} min."}
+
     return _ok(report)
 
 
