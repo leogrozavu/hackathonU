@@ -2012,6 +2012,12 @@ function showPitch3D(){
 function hidePitch3D(){
   const launcher = document.getElementById('pitch-launcher');
   const card = document.getElementById('pitch-card-wrap');
+  // If currently in fullscreen, reset body overflow + remove fullscreen class first
+  if(card && card.classList.contains('fullscreen')){
+    card.classList.remove('fullscreen');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', _pitchEscHandler);
+  }
   if(launcher) launcher.style.display = '';
   if(card) card.style.display = 'none';
   if(_pitch.rafId){ cancelAnimationFrame(_pitch.rafId); _pitch.rafId = null; }
