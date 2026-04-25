@@ -195,6 +195,7 @@ INSIGHT_PROMPTS = {
     "player_score_line": "Analizează evoluția scorului acestui jucător pe sezon. În 2-3 propoziții române, identifică tendința și volatilitatea. Cifre concrete.",
     "player_loss_donut": "Analizează distribuția pierderilor acestui jucător pe 3 zone. În 2-3 propoziții române, identifică zona predilectă și implicația. Cifre concrete.",
     "player_attack_radar": "Analizează radarul de atac al acestui jucător vs media echipei. În 2-3 propoziții române, identifică direcția dominantă și ce înseamnă pentru rolul lui.",
+    "player_line_breaks": "Analizează contribuția acestui jucător la spargerea liniilor (curse progresive, pase prin linii, pase în treimea adversă, pase smart). În 2-3 propoziții române, evaluează dacă e un motor de progresie sau un punct de stagnare RAPORTAT LA POZIȚIA LUI (portar/fundaș central NU sunt așteptați să spargă linii). Termină cu o sugestie.",
     "player_training_calendar": "Analizează calendarul de antrenamente al acestui jucător. În 2-3 propoziții române, identifică ritmul (regulat / blocat / oboseală) și o sugestie. Cifre concrete.",
 }
 

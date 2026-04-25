@@ -53,7 +53,7 @@ def _init():
     return None, None
 
 
-GEMINI_MODEL = 'gemini-2.5-flash-lite'
+GEMINI_MODEL = 'gemini-2.5-flash'
 ANTHROPIC_MODEL = 'claude-haiku-4-5'
 
 
@@ -450,7 +450,7 @@ def explain_insight(context: str, data: dict) -> str:
         + json.dumps(data, default=str, ensure_ascii=False, indent=2)[:6000]
     )
     try:
-        return _generate(prompts.SYSTEM_INSIGHT, user_text, max_tokens=400, force_json=False).strip()
+        return _generate(prompts.SYSTEM_INSIGHT, user_text, max_tokens=900, force_json=False).strip()
     except Exception as e:
         return f'Eroare AI: {type(e).__name__}: {e}'
 
