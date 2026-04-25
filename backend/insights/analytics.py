@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from django.db.models import Q
 
-from .models import Match, Player, PlayerMatchStats
+from .models import Match, Player, PlayerMatchStats, TrainingSession
 
 
 SCORE_SCALE = 0.3
@@ -458,13 +458,20 @@ def player_form_series(window_last=8):
 
 
 def players_list():
-    """Compact list of Cluj players for the dropdown."""
+    """Compact list of Cluj players for the dropdown.
+    Includes is_cluj players and training-only (in_current_squad with no Wyscout matches).
+    """
     out = []
-    for p in Player.objects.filter(is_cluj=True):
+    qs = Player.objects.filter(models_Q=None) if False else Player.objects.all()
+    qs = Player.objects.filter(Q(is_cluj=True) | Q(in_current_squad=True))
+    for p in qs:
         stats = PlayerMatchStats.objects.filter(player=p)
         matches = stats.count()
+        # If no match data AND no training data → skip (orphan)
         if matches == 0:
-            continue
+            has_training = TrainingSession.objects.filter(player=p).exists()
+            if not has_training:
+                continue
         minutes = sum(s.minutes for s in stats)
         scores = []
         goals = 0
@@ -643,6 +650,493 @@ def player_detail(wy_id: int):
     }
 
 
+def squad_training_totals():
+    """Return dict {wy_id: {distance, hsr, sprint_25}} for all players with training data — used for ranking."""
+    out = {}
+    for s in TrainingSession.objects.select_related('player'):
+        d = out.setdefault(s.player.wy_id, {'distance': 0.0, 'hsr': 0.0, 'sprint_25': 0.0, 'sessions': 0})
+        d['distance'] += s.distance_m
+        d['hsr'] += s.speed_15_20_m
+        d['sprint_25'] += s.speed_25_50_m
+        d['sessions'] += 1
+    return out
+
+
+def player_training_load(wy_id: int):
+    """Aggregate training stats for a player across all available sessions."""
+    sessions = list(TrainingSession.objects.filter(player__wy_id=wy_id).order_by('date', 'session_name'))
+    if not sessions:
+        return None
+
+    n = len(sessions)
+    total_distance = sum(s.distance_m for s in sessions)
+    total_duration = sum(s.duration_min for s in sessions)
+    total_hsr = sum(s.speed_15_20_m for s in sessions)
+    total_sprint = sum(s.speed_20_25_m for s in sessions)
+    total_max_sprint = sum(s.speed_25_50_m for s in sessions)
+    total_high_acc = sum(s.high_int_acc_m for s in sessions)
+    total_high_dec = sum(s.high_int_dec_m for s in sessions)
+    total_accel_high_pos = sum(s.accel_high_pos for s in sessions)
+    total_accel_high_neg = sum(s.accel_high_neg for s in sessions)
+
+    weeks = {s.week for s in sessions if s.week is not None}
+    sessions_per_week = round(n / max(len(weeks), 1), 1)
+
+    avg_distance = round(total_distance / n, 0) if n else 0
+    avg_work_rate = round(sum(s.work_rate for s in sessions) / n, 1) if n else 0
+    avg_power = round(sum(s.power_avg_wkg for s in sessions) / max(n, 1), 1)
+
+    # Ranks in squad
+    totals = squad_training_totals()
+    def rank_by(key):
+        sorted_ids = [pid for pid, _ in sorted(totals.items(), key=lambda x: -x[1][key])]
+        return {'rank': sorted_ids.index(wy_id) + 1 if wy_id in sorted_ids else None, 'total': len(sorted_ids)}
+
+    # Last session (date or just last in order)
+    last = sessions[-1]
+    first = sessions[0]
+
+    # Session type distribution
+    type_counts = {}
+    for s in sessions:
+        t = s.session_type or 'altul'
+        type_counts[t] = type_counts.get(t, 0) + 1
+
+    return {
+        'total_sessions': n,
+        'total_distance_km': round(total_distance / 1000, 1),
+        'total_duration_min': round(total_duration, 0),
+        'avg_distance_per_session': avg_distance,
+        'avg_work_rate': avg_work_rate,
+        'avg_power_wkg': avg_power,
+        'total_hsr_m': round(total_hsr, 0),
+        'total_sprint_m': round(total_sprint, 0),
+        'total_max_sprint_m': round(total_max_sprint, 0),
+        'total_high_int_acc_m': round(total_high_acc, 0),
+        'total_high_int_dec_m': round(total_high_dec, 0),
+        'total_accel_high_pos': total_accel_high_pos,
+        'total_accel_high_neg': total_accel_high_neg,
+        'sessions_per_week_avg': sessions_per_week,
+        'weeks_covered': len(weeks),
+        'period_first': str(first.date) if first.date else None,
+        'period_last': str(last.date) if last.date else None,
+        'session_types': type_counts,
+        'distance_rank': rank_by('distance'),
+        'hsr_rank': rank_by('hsr'),
+        'sprint_rank': rank_by('sprint_25'),
+    }
+
+
+def player_training_timeline(wy_id: int):
+    """Per-session list cronologic for charting."""
+    out = []
+    for s in TrainingSession.objects.filter(player__wy_id=wy_id).order_by('date', 'session_name'):
+        out.append({
+            'date': str(s.date) if s.date else None,
+            'week': s.week,
+            'session_name': s.session_name,
+            'session_type': s.session_type,
+            'duration_min': round(s.duration_min, 1),
+            'distance_m': round(s.distance_m, 0),
+            'work_rate': round(s.work_rate, 1),
+            'hsr_m': round(s.speed_15_20_m, 0),
+            'sprint_m': round(s.speed_20_25_m, 0),
+            'max_sprint_m': round(s.speed_25_50_m, 0),
+            'high_int_acc_m': round(s.high_int_acc_m, 0),
+            'high_int_dec_m': round(s.high_int_dec_m, 0),
+            'power_avg_wkg': round(s.power_avg_wkg, 2),
+        })
+    return out
+
+
+def _resolve_player_by_name(query: str):
+    """Find Cluj player by partial name match (case-insensitive, accent-insensitive)."""
+    import unicodedata
+    q = unicodedata.normalize('NFD', query.lower())
+    q = ''.join(c for c in q if unicodedata.category(c) != 'Mn')
+    for p in Player.objects.filter(is_cluj=True):
+        n = unicodedata.normalize('NFD', p.name.lower())
+        n = ''.join(c for c in n if unicodedata.category(c) != 'Mn')
+        if q in n:
+            return p
+    return None
+
+
+def _resolve_match_by_opponent(opponent: str, score_hint: str = None):
+    """Find match by opponent name (and optionally score like '2-1')."""
+    candidates = list(Match.objects.filter(
+        Q(home_team__icontains=opponent) | Q(away_team__icontains=opponent)
+    ).order_by('wy_id'))
+    if not candidates:
+        return None
+    if score_hint:
+        for m in candidates:
+            if f'{m.cluj_goals}-{m.opp_goals}' == score_hint:
+                return m
+    # If multiple, return latest
+    return candidates[-1] if candidates else None
+
+
+def tool_get_player_detail(player_name: str) -> dict:
+    p = _resolve_player_by_name(player_name)
+    if not p:
+        return {'error': f'Jucătorul "{player_name}" nu a fost găsit'}
+    d = player_detail(p.wy_id)
+    if not d:
+        return {'error': 'Fără date pentru acest jucător'}
+    # Compact response — exclude per_match for token efficiency
+    return {
+        'player': d['player'],
+        'score': d['score'],
+        'totals_summary': {
+            'goals': d['totals'].get('goals'), 'assists': d['totals'].get('assists'),
+            'xg': d['totals'].get('xgShot'), 'xg_assist': d['totals'].get('xgAssist'),
+            'key_passes': d['totals'].get('keyPasses'),
+        },
+        'ball_loss': d['ball_loss'],
+        'line_breaks': d['line_breaks'],
+        'attack': d['attack'],
+        'rank_in_squad': d['rank_in_squad'],
+    }
+
+
+def tool_get_match_detail(opponent: str, score_hint: str = None) -> dict:
+    m = _resolve_match_by_opponent(opponent, score_hint)
+    if not m:
+        return {'error': f'Meciul cu "{opponent}" nu a fost găsit'}
+    return {
+        'label': m.label,
+        'score': f'{m.cluj_goals}-{m.opp_goals}',
+        'result': m.result,
+        'cluj_is_home': m.cluj_is_home,
+        'opponent': m.opponent,
+        'top_player_scores': compute_player_scores(m)[:8],
+        'ball_losses': compute_ball_loss_zones(m),
+        'line_breaks': compute_line_breaking_runs(m)[:8],
+        'attack_mix': compute_attacking_patterns(m).get('type_mix', {}),
+    }
+
+
+def tool_get_ball_loss_zones_for(scope: str, id_or_name: str = None) -> dict:
+    if scope == 'season':
+        return season_ball_losses()
+    if scope == 'player':
+        p = _resolve_player_by_name(id_or_name or '')
+        if not p:
+            return {'error': 'Jucător necunoscut'}
+        d = player_detail(p.wy_id)
+        return {'player': p.name, 'ball_loss': d['ball_loss'] if d else None}
+    if scope == 'match':
+        m = _resolve_match_by_opponent(id_or_name or '')
+        if not m:
+            return {'error': 'Meci necunoscut'}
+        return {'match': m.label, 'ball_loss': compute_ball_loss_zones(m)}
+    return {'error': f'Scope necunoscut: {scope}'}
+
+
+def tool_get_line_breaking_for(scope: str, id_or_name: str = None) -> dict:
+    if scope == 'season':
+        # Aggregate all Cluj matches
+        out = {}
+        for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
+            t = (s.raw or {}).get('total') or {}
+            d = out.setdefault(s.player.wy_id, {'name': s.player.display_name(), 'minutes': 0, 'prog_run': 0, 'through': 0, 'final_third': 0, 'smart': 0})
+            d['minutes'] += s.minutes
+            d['prog_run'] += _get(t, 'progressiveRun')
+            d['through'] += _get(t, 'successfulThroughPasses')
+            d['final_third'] += _get(t, 'successfulPassesToFinalThird')
+            d['smart'] += _get(t, 'successfulSmartPasses')
+        for d in out.values():
+            d['total'] = d['prog_run'] + d['through'] + d['final_third'] + 0.5 * d['smart']
+            d['per90'] = round(d['total'] * 90 / max(d['minutes'], 1), 2)
+        return {'top10': sorted(out.values(), key=lambda x: -x['per90'])[:10]}
+    if scope == 'match':
+        m = _resolve_match_by_opponent(id_or_name or '')
+        if not m:
+            return {'error': 'Meci necunoscut'}
+        return {'match': m.label, 'line_breaks': compute_line_breaking_runs(m)[:10]}
+    return {'error': f'Scope necunoscut: {scope}'}
+
+
+def tool_get_players_by_role(role: str) -> dict:
+    """Compară toți jucătorii Cluj de pe o anumită poziție/rol.
+    role poate fi: GK, CB, FB (left/right back), DM, CM, AM, WG (winger), CF.
+    Returnează stats complete: scor, formă, dueluri, aer, intercepții, pierderi.
+    """
+    role_map = {
+        'GK': {'gk'},
+        'CB': {'cb', 'lcb', 'rcb'},
+        'FB': {'lb', 'rb', 'lwb', 'rwb'},
+        'DM': {'dmf', 'ldmf', 'rdmf'},
+        'CM': {'cmf', 'lcmf', 'rcmf'},
+        'AM': {'amf', 'am', 'lamf', 'ramf'},
+        'WG': {'lw', 'rw'},
+        'CF': {'cf', 'st'},
+    }
+    role_upper = (role or '').upper()
+    codes = role_map.get(role_upper)
+    if not codes:
+        return {'error': f'Rol necunoscut: "{role}". Folosește: GK, CB, FB, DM, CM, AM, WG, CF.'}
+
+    # Build form map for trend lookup
+    form_map = {p['player_id']: p for p in player_form_series(window_last=5)}
+
+    data = {}
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
+        pc = (s.position_code or '').lower()
+        if pc not in codes:
+            continue
+        total = (s.raw or {}).get('total') or {}
+        c = _compute_components(total, s.minutes)
+        pid = s.player.wy_id
+        d = data.setdefault(pid, {
+            'player_id': pid,
+            'name': s.player.display_name(),
+            'in_current_squad': s.player.is_cluj and s.player.in_current_squad,
+            'position_code': pc,
+            'minutes': 0, 'matches': 0, 'scores': [],
+            'goals': 0, 'assists': 0, 'xg': 0.0,
+            'def_duels': 0, 'def_duels_won': 0,
+            'aerial': 0, 'aerial_won': 0,
+            'interceptions': 0, 'clearances': 0, 'tackles': 0,
+            'losses': 0, 'dangerous': 0,
+            'progressive_run': 0, 'final_third_passes': 0,
+            'passes': 0, 'successful_passes': 0,
+            'key_passes': 0, 'shot_assists': 0,
+        })
+        d['minutes'] += s.minutes
+        d['matches'] += 1
+        d['scores'].append(c['score'])
+        d['goals'] += _get(total, 'goals')
+        d['assists'] += _get(total, 'assists')
+        d['xg'] += _get(total, 'xgShot')
+        d['def_duels'] += _get(total, 'defensiveDuels')
+        d['def_duels_won'] += _get(total, 'defensiveDuelsWon')
+        d['aerial'] += _get(total, 'aerialDuels')
+        d['aerial_won'] += _get(total, 'aerialDuelsWon')
+        d['interceptions'] += _get(total, 'interceptions')
+        d['clearances'] += _get(total, 'clearances')
+        d['tackles'] += _get(total, 'slidingTackles')
+        d['losses'] += _get(total, 'losses')
+        d['dangerous'] += _get(total, 'dangerousOwnHalfLosses')
+        d['progressive_run'] += _get(total, 'progressiveRun')
+        d['final_third_passes'] += _get(total, 'successfulPassesToFinalThird')
+        d['passes'] += _get(total, 'passes')
+        d['successful_passes'] += _get(total, 'successfulPasses')
+        d['key_passes'] += _get(total, 'keyPasses')
+        d['shot_assists'] += _get(total, 'shotAssists')
+
+    out = []
+    for pid, d in data.items():
+        n = max(d['matches'], 1)
+        avg_score = round(sum(d['scores']) / n, 1) if d['scores'] else 0
+        fm = form_map.get(pid, {})
+        out.append({
+            'name': d['name'],
+            'position': d['position_code'].upper(),
+            'in_squad': d['in_current_squad'],
+            'matches': d['matches'],
+            'minutes': d['minutes'],
+            'season_avg_score': avg_score,
+            'recent_avg_score': fm.get('recent_avg_score', avg_score),
+            'form_delta': fm.get('form_delta', 0),
+            'goals': d['goals'],
+            'assists': d['assists'],
+            'xg': round(d['xg'], 2),
+            'def_duels_won_pct': round(d['def_duels_won'] * 100 / max(d['def_duels'], 1)),
+            'aerial_won_pct': round(d['aerial_won'] * 100 / max(d['aerial'], 1)),
+            'interceptions': d['interceptions'],
+            'clearances': d['clearances'],
+            'tackles': d['tackles'],
+            'losses': d['losses'],
+            'dangerous_losses': d['dangerous'],
+            'losses_per90': round(d['losses'] * 90 / max(d['minutes'], 1), 1),
+            'progressive_run': d['progressive_run'],
+            'final_third_passes': d['final_third_passes'],
+            'pass_pct': round(d['successful_passes'] * 100 / max(d['passes'], 1)),
+            'key_passes': d['key_passes'],
+            'shot_assists': d['shot_assists'],
+        })
+    out.sort(key=lambda x: -x['minutes'])
+    return {'role': role_upper, 'codes': sorted(codes), 'players': out, 'count': len(out)}
+
+
+def tool_get_attacking_patterns_vs(opponent_name: str) -> dict:
+    matches = list(Match.objects.filter(Q(home_team__icontains=opponent_name) | Q(away_team__icontains=opponent_name)).order_by('wy_id'))
+    if not matches:
+        return {'error': f'Niciun meci cu "{opponent_name}"'}
+    rows = []
+    for m in matches:
+        ap = compute_attacking_patterns(m)
+        rows.append({
+            'match': m.label,
+            'result': m.result,
+            'score': f'{m.cluj_goals}-{m.opp_goals}',
+            'mix': ap.get('type_mix', {}),
+        })
+    # Aggregated mix
+    agg = {'wide': 0, 'central': 0, 'direct': 0, 'set_piece': 0}
+    for r in rows:
+        for k in agg:
+            agg[k] += r['mix'].get(k, 0)
+    return {'opponent': opponent_name, 'matches_count': len(rows), 'aggregate_mix': agg, 'matches': rows}
+
+
+def head_to_head_attack_split():
+    """Pentru F1 attacking_patterns: media attack mix în meciurile câștigate vs înfrânte."""
+    won_mix = {'wide': 0, 'central': 0, 'direct': 0, 'set_piece': 0}
+    lost_mix = {'wide': 0, 'central': 0, 'direct': 0, 'set_piece': 0}
+    won_count = lost_count = 0
+    for m in Match.objects.all():
+        if m.result not in ('W', 'L'):
+            continue
+        target = won_mix if m.result == 'W' else lost_mix
+        for s in PlayerMatchStats.objects.filter(match=m, player__is_cluj=True):
+            t = (s.raw or {}).get('total') or {}
+            target['wide']      += _get(t, 'successfulCrosses')
+            target['central']   += _get(t, 'successfulThroughPasses') + _get(t, 'successfulSmartPasses')
+            target['direct']    += _get(t, 'successfulLongPasses')
+            target['set_piece'] += _get(t, 'corners') + _get(t, 'directFreeKicks')
+        if m.result == 'W':
+            won_count += 1
+        else:
+            lost_count += 1
+    # Average per match
+    def avg(d, n):
+        return {k: round(v / max(n, 1), 1) for k, v in d.items()}
+    return {
+        'won': avg(won_mix, won_count),
+        'lost': avg(lost_mix, lost_count),
+        'won_count': won_count,
+        'lost_count': lost_count,
+    }
+
+
+def coach_brief_payload():
+    """Date compacte pentru AI coach brief F1."""
+    summary = season_summary()
+    pf = player_form_series(window_last=5)
+    leaders = sorted(pf, key=lambda x: -x['form_delta'])[:5]
+    concerns = sorted(pf, key=lambda x: x['form_delta'])[:5]
+    losses = season_ball_losses()
+    line_break_data = []
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
+        total = (s.raw or {}).get('total') or {}
+        line_break_data.append({
+            'player_id': s.player.wy_id,
+            'player_name': s.player.display_name(),
+            'position_code': s.position_code or s.player.position_code,
+            'minutes': s.minutes,
+            'prog_run': _get(total, 'progressiveRun'),
+            'through': _get(total, 'successfulThroughPasses'),
+            'final_third': _get(total, 'successfulPassesToFinalThird'),
+            'smart': _get(total, 'successfulSmartPasses'),
+        })
+    # Aggregate per player
+    per_player_lb = {}
+    for r in line_break_data:
+        d = per_player_lb.setdefault(r['player_id'], {
+            'name': r['player_name'], 'minutes': 0, 'position': r['position_code'],
+            'prog_run': 0, 'through': 0, 'final_third': 0, 'smart': 0,
+        })
+        d['minutes'] += r['minutes']
+        if r['position_code'] and not d.get('position'):
+            d['position'] = r['position_code']
+        for k in ('prog_run', 'through', 'final_third', 'smart'):
+            d[k] += r[k]
+    for d in per_player_lb.values():
+        d['total'] = d['prog_run'] + d['through'] + d['final_third'] + 0.5 * d['smart']
+        d['per90'] = round(d['total'] * 90 / max(d['minutes'], 1), 2)
+    # Exclude goalkeepers from line-break blockers list (their job isn't to break lines)
+    EXCLUDED_FROM_BLOCKERS = {'gk', 'cb', 'lcb', 'rcb'}  # GK and pure CBs
+    lb_sorted = sorted(per_player_lb.values(), key=lambda x: -x['per90'])
+    h2h = head_to_head_attack_split()
+    return {
+        'team_summary': {
+            'record': summary['record'],
+            'goals': f"{summary['goals_for']}-{summary['goals_against']}",
+            'xg': f"{summary['xg_for']}-{summary['xg_against']}",
+            'ppg': summary['ppg'],
+        },
+        'player_scores_summary': [
+            {'name': p['player_name'], 'season_avg': p['season_avg_score'], 'recent_avg': p['recent_avg_score'],
+             'form_delta': p['form_delta'], 'matches': p['total_matches']}
+            for p in pf if p['total_matches'] >= 5
+        ][:20],
+        'leaders_form': [
+            {'name': p['player_name'], 'form_delta': p['form_delta'], 'season_avg': p['season_avg_score'], 'recent_avg': p['recent_avg_score']}
+            for p in leaders if p['form_delta'] > 0
+        ],
+        'concerns_form': [
+            {'name': p['player_name'], 'form_delta': p['form_delta'], 'season_avg': p['season_avg_score'], 'recent_avg': p['recent_avg_score']}
+            for p in concerns if p['form_delta'] < 0
+        ],
+        'ball_loss_team': losses['team_totals'],
+        'ball_loss_top10': losses['players'][:10],
+        'line_breaks_top10': lb_sorted[:10],
+        'line_breaks_low_attacking_mids': sorted(
+            [d for d in per_player_lb.values()
+             if d['minutes'] >= 600
+             and (d.get('position') or '').lower() not in EXCLUDED_FROM_BLOCKERS],
+            key=lambda x: x['per90'],
+        )[:8],
+        'attack_mix_season': season_attacking_patterns()['type_mix'],
+        'attack_mix_won_vs_lost': h2h,
+    }
+
+
+def cross_insights_payload():
+    """Date pentru detectarea corelațiilor F4."""
+    pf = player_form_series(window_last=5)
+    # Build per-player axes
+    losses = {l['player_id']: l for l in season_ball_losses()['players']}
+    # Aggregate line-breaks per player
+    per_player_lb = {}
+    per_player_xg = {}
+    per_player_goals = {}
+    for s in PlayerMatchStats.objects.filter(player__is_cluj=True).select_related('player'):
+        total = (s.raw or {}).get('total') or {}
+        pid = s.player.wy_id
+        d = per_player_lb.setdefault(pid, {'minutes': 0, 'prog_run': 0, 'through': 0, 'final_third': 0, 'smart': 0})
+        d['minutes'] += s.minutes
+        d['prog_run'] += _get(total, 'progressiveRun')
+        d['through'] += _get(total, 'successfulThroughPasses')
+        d['final_third'] += _get(total, 'successfulPassesToFinalThird')
+        d['smart'] += _get(total, 'successfulSmartPasses')
+        per_player_xg[pid] = per_player_xg.get(pid, 0) + _get(total, 'xgShot')
+        per_player_goals[pid] = per_player_goals.get(pid, 0) + _get(total, 'goals')
+
+    rows = []
+    for p in pf:
+        pid = p['player_id']
+        lb = per_player_lb.get(pid, {})
+        loss = losses.get(pid, {})
+        lb_total = lb.get('prog_run', 0) + lb.get('through', 0) + lb.get('final_third', 0) + 0.5 * lb.get('smart', 0)
+        lb_per90 = round(lb_total * 90 / max(lb.get('minutes', 1), 1), 2)
+        rows.append({
+            'name': p['player_name'],
+            'matches': p['total_matches'],
+            'season_avg_score': p['season_avg_score'],
+            'recent_avg_score': p['recent_avg_score'],
+            'form_delta': p['form_delta'],
+            'line_breaks_per90': lb_per90,
+            'losses_per90': loss.get('losses_per90', 0),
+            'dangerous_losses': loss.get('dangerous', 0),
+            'goals': per_player_goals.get(pid, 0),
+            'xg': round(per_player_xg.get(pid, 0), 2),
+            'finish_eff': round(per_player_goals.get(pid, 0) - per_player_xg.get(pid, 0), 2),
+        })
+    summary = season_summary()
+    attack = season_attacking_patterns()['type_mix']
+    return {
+        'team_record': summary['record'],
+        'team_xg_over_performance': round(summary['goals_for'] - summary['xg_for'], 2),
+        'team_xg_against_over': round(summary['goals_against'] - summary['xg_against'], 2),
+        'team_attack_mix': attack,
+        'players_axes': rows,
+    }
+
+
 def head_to_head(opponent_name: str):
     """All Cluj matches vs a given opponent with per-player scores."""
     matches = Match.objects.filter(
@@ -680,8 +1174,20 @@ def season_snapshot_for_ai():
     """Rich dict used as grounding for AI chat + trend detection."""
     current_ids = set(Player.objects.filter(in_current_squad=True).values_list('wy_id', flat=True))
     players_form = player_form_series(window_last=5)
+    # Build training load summary per player
+    training_totals = squad_training_totals()
+    training_by_pid = {}
+    for pid, t in training_totals.items():
+        training_by_pid[pid] = {
+            'sessions_2mo': t['sessions'],
+            'distance_km': round(t['distance']/1000, 1),
+            'hsr_m': round(t['hsr']),
+            'sprint_25_m': round(t['sprint_25']),
+        }
     for pf in players_form:
         pf['currently_at_cluj'] = pf['player_id'] in current_ids
+        if pf['player_id'] in training_by_pid:
+            pf['training_load_2mo'] = training_by_pid[pf['player_id']]
 
     current_squad = [
         {'name': p.display_name(), 'position': p.position_code, 'appearances': p.appearances}
@@ -692,10 +1198,37 @@ def season_snapshot_for_ai():
          'note': 'played this season for Cluj but no longer at the club'}
         for p in Player.objects.filter(is_cluj=True, in_current_squad=False)
     ]
+    # Regulars — jucători folosiți cel mai des (titulari obișnuiți)
+    regulars_data = []
+    for p in Player.objects.filter(is_cluj=True):
+        stats = PlayerMatchStats.objects.filter(player=p)
+        if not stats.exists():
+            continue
+        total_min = sum(s.minutes for s in stats)
+        matches = stats.count()
+        # Position cea mai jucată
+        pos_min = {}
+        for s in stats:
+            pc = (s.position_code or p.position_code or '').lower()
+            if pc:
+                pos_min[pc] = pos_min.get(pc, 0) + s.minutes
+        main_pos = max(pos_min.items(), key=lambda x: x[1])[0] if pos_min else (p.position_code or '')
+        if total_min > 0:
+            regulars_data.append({
+                'name': p.display_name(),
+                'position': main_pos,
+                'matches': matches,
+                'minutes': total_min,
+                'avg_min_per_match': round(total_min / matches),
+                'in_current_squad': p.in_current_squad,
+            })
+    regulars_data.sort(key=lambda x: -x['minutes'])
+
     return {
         'summary': season_summary(),
         'current_squad': current_squad,
         'players_who_left_mid_season': season_only,
+        'regulars': regulars_data[:18],  # primii 18 cei mai folosiți (lot de bază)
         'players_form': players_form,
         'top_ball_losers': season_ball_losses()['players'][:10],
         'attack_mix': season_attacking_patterns()['type_mix'],

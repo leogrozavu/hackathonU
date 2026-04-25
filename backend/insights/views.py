@@ -132,6 +132,37 @@ def season_attacking_patterns(request):
     return _ok(analytics.season_attacking_patterns())
 
 
+def season_coach_brief(request):
+    if not ai.is_enabled():
+        return JsonResponse({'error': 'AI dezactivat (setează GEMINI_API_KEY)'}, status=503)
+    payload = analytics.coach_brief_payload()
+    return _ok(ai.generate_coach_brief(payload))
+
+
+def season_cross_insights(request):
+    if not ai.is_enabled():
+        return JsonResponse({'error': 'AI dezactivat (setează GEMINI_API_KEY)'}, status=503)
+    payload = analytics.cross_insights_payload()
+    return _ok(ai.generate_cross_insights(payload))
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def ai_explain(request):
+    if not ai.is_enabled():
+        return JsonResponse({'error': 'AI dezactivat (setează GEMINI_API_KEY)'}, status=503)
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        return JsonResponse({'error': 'invalid json'}, status=400)
+    context = body.get('context')
+    data = body.get('data') or {}
+    if not context:
+        return JsonResponse({'error': 'context required'}, status=400)
+    text = ai.explain_insight(context, data)
+    return _ok({'explanation': text})
+
+
 def season_ai_trends(request):
     if not ai.is_enabled():
         return JsonResponse({'error': 'AI disabled (set ANTHROPIC_API_KEY)'}, status=503)
@@ -149,6 +180,16 @@ def player_detail(request, wy_id):
     if not detail:
         return JsonResponse({'error': 'player not found'}, status=404)
     return _ok(detail)
+
+
+def player_training(request, wy_id):
+    load = analytics.player_training_load(wy_id)
+    if load is None:
+        return JsonResponse({'error': 'no training data for this player'}, status=404)
+    return _ok({
+        'load': load,
+        'timeline': analytics.player_training_timeline(wy_id),
+    })
 
 
 def player_ai_summary(request, wy_id):
@@ -173,6 +214,9 @@ def ai_chat(request):
     messages = body.get('messages') or []
     if not messages:
         return JsonResponse({'error': 'messages required'}, status=400)
+    use_tools = body.get('use_tools', True)
     snapshot = analytics.season_snapshot_for_ai()
-    reply = ai.chat(messages, snapshot)
-    return _ok({'reply': reply})
+    if use_tools:
+        result = ai.chat_with_tools(messages, snapshot)
+        return _ok(result)
+    return _ok({'reply': ai.chat(messages, snapshot), 'tool_calls': []})

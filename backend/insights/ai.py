@@ -218,6 +218,172 @@ def chat(messages: list, snapshot: dict) -> str:
         return f'Eroare AI: {type(e).__name__}: {e}'
 
 
+# ---- Tool-using chat (F2) ----
+
+def _build_tool_declarations():
+    """Build Gemini function declarations for the 5 tools."""
+    return [
+        {
+            'name': 'get_player_detail',
+            'description': 'Returnează profilul complet al unui jucător Cluj (scoruri, pierderi, line-breaks, atac, ranking).',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {'player_name': {'type': 'STRING', 'description': 'Numele jucătorului (parțial OK)'}},
+                'required': ['player_name'],
+            },
+        },
+        {
+            'name': 'get_match_detail',
+            'description': 'Returnează insights pentru un singur meci al lui Cluj (scoruri, pierderi, line-breaks, atac).',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'opponent': {'type': 'STRING', 'description': 'Numele adversarului (parțial OK)'},
+                    'score_hint': {'type': 'STRING', 'description': 'Opțional: scorul format "X-Y" pentru a dezambigua'},
+                },
+                'required': ['opponent'],
+            },
+        },
+        {
+            'name': 'get_ball_loss_zones_for',
+            'description': 'Returnează distribuția pierderilor de minge pentru sezon, un meci sau un jucător.',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'scope': {'type': 'STRING', 'description': '"season", "match" sau "player"'},
+                    'id_or_name': {'type': 'STRING', 'description': 'Pentru match/player: numele adversarului sau jucătorului'},
+                },
+                'required': ['scope'],
+            },
+        },
+        {
+            'name': 'get_line_breaking_for',
+            'description': 'Returnează contribuțiile de line-breaking pentru sezon sau un meci.',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'scope': {'type': 'STRING', 'description': '"season" sau "match"'},
+                    'id_or_name': {'type': 'STRING', 'description': 'Pentru match: numele adversarului'},
+                },
+                'required': ['scope'],
+            },
+        },
+        {
+            'name': 'get_attacking_patterns_vs',
+            'description': 'Returnează pattern-urile de atac ale lui Cluj în meciurile cu un anumit adversar (toate apariții).',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {'opponent_name': {'type': 'STRING'}},
+                'required': ['opponent_name'],
+            },
+        },
+        {
+            'name': 'get_players_by_role',
+            'description': 'Compară TOȚI jucătorii Cluj de pe o anumită poziție cu statistici detaliate: scor mediu, formă, dueluri câștigate %, dueluri aeriene %, intercepții, degajări, pierderi periculoase, goluri, asisturi, pase reușite %. Folosește acest tool pentru întrebări despre "cei mai folosiți fundași centrali", "compară mijlocașii", "cine joacă pe poartă", "alegere între atacanți" etc.',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'role': {'type': 'STRING', 'description': 'Cod poziție: GK (portari), CB (fundași centrali), FB (fundași laterali), DM (mijlocași defensivi), CM (mijlocași centrali), AM (mijlocași ofensivi), WG (extreme), CF (atacanți)'},
+                },
+                'required': ['role'],
+            },
+        },
+    ]
+
+
+def _execute_tool(name: str, args: dict) -> dict:
+    from . import analytics
+    handlers = {
+        'get_player_detail':           lambda a: analytics.tool_get_player_detail(a.get('player_name', '')),
+        'get_match_detail':            lambda a: analytics.tool_get_match_detail(a.get('opponent', ''), a.get('score_hint')),
+        'get_ball_loss_zones_for':     lambda a: analytics.tool_get_ball_loss_zones_for(a.get('scope', ''), a.get('id_or_name')),
+        'get_line_breaking_for':       lambda a: analytics.tool_get_line_breaking_for(a.get('scope', ''), a.get('id_or_name')),
+        'get_attacking_patterns_vs':   lambda a: analytics.tool_get_attacking_patterns_vs(a.get('opponent_name', '')),
+        'get_players_by_role':         lambda a: analytics.tool_get_players_by_role(a.get('role', '')),
+    }
+    h = handlers.get(name)
+    if not h:
+        return {'error': f'Tool necunoscut: {name}'}
+    try:
+        return h(args)
+    except Exception as e:
+        return {'error': f'{type(e).__name__}: {e}'}
+
+
+def chat_with_tools(messages: list, snapshot: dict) -> dict:
+    """F2 — chat cu tool calling (max 3 hops). Doar Gemini.
+    Returnează: {'reply': str, 'tool_calls': [{'name', 'args', 'result_keys'}]}.
+    Fallback la chat() dacă apare orice eroare sau provider nu e Gemini.
+    """
+    client, provider = _init()
+    if not client or provider != 'gemini':
+        return {'reply': chat(messages, snapshot), 'tool_calls': []}
+    try:
+        from google.genai import types
+    except ImportError:
+        return {'reply': chat(messages, snapshot), 'tool_calls': []}
+
+    system_text = prompts.SYSTEM_TOOL_AGENT + '\n\nSnapshot iniţial cu rezumatul sezonului:\n' + prompts.render_chat_snapshot(snapshot)[:40000]
+    tools = [types.Tool(function_declarations=_build_tool_declarations())]
+
+    # Build initial contents from messages
+    contents = []
+    for m in messages:
+        role = 'user' if m['role'] == 'user' else 'model'
+        contents.append({'role': role, 'parts': [{'text': m['content']}]})
+
+    tool_calls_log = []
+    try:
+        for hop in range(3):
+            _log(f'TOOL-CHAT hop={hop} provider=gemini',
+                 f'SYSTEM (first 300):\n{system_text[:300]}\n\nLATEST USER:\n{messages[-1]["content"] if messages else ""}')
+            resp = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_text,
+                    tools=tools,
+                    max_output_tokens=2000,
+                    temperature=0.4,
+                ),
+            )
+            # Inspect parts for function_calls
+            cand = (resp.candidates or [None])[0]
+            if not cand or not cand.content or not cand.content.parts:
+                # No candidates / empty — return text or fallback
+                text = (resp.text or '').strip()
+                return {'reply': text or '(fără răspuns)', 'tool_calls': tool_calls_log}
+
+            fn_calls = [p.function_call for p in cand.content.parts if getattr(p, 'function_call', None)]
+            if not fn_calls:
+                # Final answer — collect text from parts
+                final_text = (resp.text or '').strip()
+                return {'reply': final_text, 'tool_calls': tool_calls_log}
+
+            # Execute each tool call and add to contents
+            contents.append(cand.content)  # model's function_call message
+            tool_responses = []
+            for fc in fn_calls:
+                args = dict(fc.args) if fc.args else {}
+                _log(f'TOOL CALL: {fc.name}', f'args: {args}')
+                result = _execute_tool(fc.name, args)
+                _log(f'TOOL RESULT: {fc.name}', str(result)[:1500])
+                tool_calls_log.append({'name': fc.name, 'args': args, 'result_keys': list(result.keys()) if isinstance(result, dict) else []})
+                tool_responses.append({
+                    'function_response': {
+                        'name': fc.name,
+                        'response': result if isinstance(result, dict) else {'value': result},
+                    }
+                })
+            contents.append({'role': 'user', 'parts': tool_responses})
+        # Reached max hops
+        return {'reply': 'Am atins limita de investigare. Te rog reformulează întrebarea mai precis.', 'tool_calls': tool_calls_log}
+    except Exception as e:
+        _log('TOOL-CHAT ERROR', f'{type(e).__name__}: {e}')
+        # Fallback to plain chat
+        return {'reply': chat(messages, snapshot), 'tool_calls': tool_calls_log}
+
+
 def detect_trends(trends: list, player_season: list) -> dict:
     if not is_enabled():
         return {'error': 'AI disabled (no GEMINI_API_KEY or ANTHROPIC_API_KEY)'}
@@ -235,6 +401,56 @@ def generate_player_summary(detail: dict) -> str:
     user_text = prompts.render_player_profile_prompt(detail)
     try:
         return _generate(prompts.SYSTEM_PLAYER_PROFILE, user_text, max_tokens=1500, force_json=False)
+    except Exception as e:
+        return f'Eroare AI: {type(e).__name__}: {e}'
+
+
+def generate_coach_brief(payload: dict) -> dict:
+    """F1 — Coach brief structurat pe 4 axe."""
+    if not is_enabled():
+        return {'error': 'AI disabled (no GEMINI_API_KEY or ANTHROPIC_API_KEY)'}
+    user_text = (
+        "DATE SEZON Cluj (single source of truth):\n"
+        + json.dumps(payload, default=str, ensure_ascii=False, indent=2)[:25000]
+        + "\n\nGenerează brief-ul JSON cu cele 4 secțiuni acum."
+    )
+    try:
+        text = _generate(prompts.SYSTEM_COACH_BRIEF, user_text, max_tokens=4500, force_json=True)
+        return _parse_json(text)
+    except Exception as e:
+        return {'error': f'AI error: {type(e).__name__}: {e}'}
+
+
+def generate_cross_insights(payload: dict) -> dict:
+    """F4 — corelații cross-axe."""
+    if not is_enabled():
+        return {'error': 'AI disabled (no GEMINI_API_KEY or ANTHROPIC_API_KEY)'}
+    user_text = (
+        "DATE Cluj (single source of truth):\n"
+        + json.dumps(payload, default=str, ensure_ascii=False, indent=2)[:18000]
+        + "\n\nGenerează corelațiile JSON acum."
+    )
+    try:
+        text = _generate(prompts.SYSTEM_CROSS_INSIGHT, user_text, max_tokens=2500, force_json=True)
+        return _parse_json(text)
+    except Exception as e:
+        return {'error': f'AI error: {type(e).__name__}: {e}'}
+
+
+def explain_insight(context: str, data: dict) -> str:
+    """F3 — explicație scurtă pentru un singur grafic."""
+    if not is_enabled():
+        return 'AI dezactivat (lipsește GEMINI_API_KEY).'
+    instr = prompts.INSIGHT_PROMPTS.get(context)
+    if not instr:
+        return f'Context necunoscut: {context}'
+    user_text = (
+        instr
+        + "\n\nDATE:\n"
+        + json.dumps(data, default=str, ensure_ascii=False, indent=2)[:6000]
+    )
+    try:
+        return _generate(prompts.SYSTEM_INSIGHT, user_text, max_tokens=400, force_json=False).strip()
     except Exception as e:
         return f'Eroare AI: {type(e).__name__}: {e}'
 

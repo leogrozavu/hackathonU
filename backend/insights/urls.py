@@ -15,8 +15,12 @@ urlpatterns = [
     path('season/ball-losses/', views.season_ball_losses),
     path('season/attacking-patterns/', views.season_attacking_patterns),
     path('season/ai-trends/', views.season_ai_trends),
+    path('season/coach-brief/', views.season_coach_brief),
+    path('season/cross-insights/', views.season_cross_insights),
+    path('ai/explain/', views.ai_explain),
     path('players/', views.players_list),
     path('players/<int:wy_id>/', views.player_detail),
     path('players/<int:wy_id>/ai-summary/', views.player_ai_summary),
+    path('players/<int:wy_id>/training/', views.player_training),
     path('ai/chat/', views.ai_chat),
 ]

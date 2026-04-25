@@ -376,7 +376,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
   </div>
 
   <!-- Trends chart -->
-  <div class="section-label">
+  <div class="section-label" data-insight-anchor="season-trends">
     <span class="num-tag">§ 01</span>
     <h3>Formă pe parcursul sezonului</h3>
     <span class="rule"></span>
@@ -387,7 +387,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
   </div>
 
   <!-- Top 10 + Attack mix -->
-  <div class="section-label">
+  <div class="section-label" data-insight-anchor="season-top10">
     <span class="num-tag">§ 02</span>
     <h3>Jucătorii sezonului</h3>
     <span class="rule"></span>
@@ -428,7 +428,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
   </div>
 
   <!-- Ball losses + AI -->
-  <div class="section-label">
+  <div class="section-label" data-insight-anchor="season-losers">
     <span class="num-tag">§ 03</span>
     <h3>Pierderi de minge &amp; AI insights</h3>
     <span class="rule"></span>
@@ -448,7 +448,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div style="display:flex;align-items:center;gap:10px">
           <span class="tag-ai" title="Generat de inteligență artificială (Google Gemini) pe baza datelor reale din DB">★ AI</span>
-          <h4 style="font-family:'Fraunces',serif">Insights · trenduri</h4>
+          <h4 style="font-family:'Fraunces',serif">Cine crește · cine scade</h4>
         </div>
         <button class="btn sm" onclick="generateTrends()">
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
@@ -460,6 +460,55 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
           Apasă <strong>Regenerate</strong> pentru analiza AI a trendurilor sezonului (bazată pe datele reale din DB).
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- F1 — Coach Brief (analiză structurată) -->
+  <div class="section-label">
+    <span class="num-tag">§ 04</span>
+    <h3>Raport AI pentru antrenor</h3>
+    <span class="rule"></span>
+    <span class="aside">analiză completă pe 4 categorii cu recomandări concrete</span>
+  </div>
+  <div class="ai-card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag-ai" title="Generat de Google Gemini pe baza datelor reale din DB">★ AI</span>
+        <h4 style="font-family:'Fraunces',serif">Raport pentru staff</h4>
+      </div>
+      <button class="btn sm primary" onclick="generateCoachBrief()">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L13.5 8L20 9L15 13.5L16.5 20L12 16.5L7.5 20L9 13.5L4 9L10.5 8Z"/></svg>
+        Generează raport
+      </button>
+    </div>
+    <div id="ai-coach-brief-body" style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem;line-height:1.5">
+      Apasă <strong>Generează raport</strong> pentru o analiză completă cu 4 secțiuni:
+      <strong>scoruri jucători</strong> · <strong>pierderi de minge</strong> · <strong>progresia mingii spre poartă</strong> · <strong>stil de atac</strong>.
+      Fiecare secțiune are leaderi, jucători-îngrijorare și o recomandare concretă pentru antrenor.
+    </div>
+  </div>
+
+  <!-- F4 — Cross-Insight Detector -->
+  <div class="section-label">
+    <span class="num-tag">§ 05</span>
+    <h3>Tipare ascunse</h3>
+    <span class="rule"></span>
+    <span class="aside">legături între scoruri, pierderi, progresie și atac pe care un dashboard simplu nu le arată</span>
+  </div>
+  <div class="ai-card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag-ai" title="AI găsește legături surprinzătoare între datele celor 4 categorii">★ AI</span>
+        <h4 style="font-family:'Fraunces',serif">Detector de tipare</h4>
+      </div>
+      <button class="btn sm primary" onclick="generateCrossInsights()">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L13.5 8L20 9L15 13.5L16.5 20L12 16.5L7.5 20L9 13.5L4 9L10.5 8Z"/></svg>
+        Caută tipare
+      </button>
+    </div>
+    <div id="ai-cross-body" style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem;line-height:1.5">
+      Apasă <strong>Caută tipare</strong>. AI-ul identifică 3-5 legături interesante:
+      de exemplu, jucători care progresează mult mingea sunt și cei care o pierd des, sau atacul direct corelat cu finalizare peste așteptat.
     </div>
   </div>
 
@@ -539,7 +588,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <div class="card">
       <div class="meta-row">
         <div>
-          <h4>Player scores — breakdown</h4>
+          <h4>Scoruri jucători</h4>
           <div class="desc" style="margin-top:4px">Top 10 jucători Cluj în acest meci. Bara compusă din 5 componente; numărul din dreapta = scor total /100.</div>
         </div>
       </div>
@@ -555,7 +604,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <div class="card">
       <div class="meta-row">
         <div>
-          <h4>Pierderi minge</h4>
+          <h4>Pierderi de minge</h4>
           <div class="desc" style="margin-top:4px">Distribuție în zonă · top 5 jucători.</div>
         </div>
         <div class="num" style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--muted)">TOTAL <strong style="color:var(--ink)" id="m-losses-total">108</strong></div>
@@ -578,14 +627,14 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <div class="card">
       <div class="meta-row">
         <div>
-          <h4>Line-breaking runs</h4>
+          <h4>Progresia mingii spre poartă</h4>
           <div class="desc" style="margin-top:4px" title="Progressive runs = curse înainte cu mingea care depășesc 5m. Through passes = pase printre fundași. Final 3rd = pase reușite în treimea adversă. Smart passes = pase creative care sparg liniile.">Cumul: <abbr title="Curse cu mingea care progresează spre poarta adversă">progressive runs</abbr> · <abbr title="Pase printre fundași spre un coechipier liber">through passes</abbr> · <abbr title="Pase reușite în treimea adversă">final 3rd</abbr> · <abbr title="Pase creative care sparg liniile defensive">smart passes</abbr>.</div>
         </div>
       </div>
       <div class="chart-wrap tall"><canvas id="lineBreaks"></canvas></div>
     </div>
     <div class="card">
-      <div class="meta-row"><div><h4>Attacking patterns (meci)</h4></div></div>
+      <div class="meta-row"><div><h4>Stil de atac (în acest meci)</h4></div></div>
       <div class="chart-wrap" style="height:320px"><canvas id="matchAttackRadar"></canvas></div>
     </div>
   </div>
@@ -595,7 +644,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div style="display:flex;align-items:center;gap:10px">
         <span class="tag-ai" title="Generat de inteligență artificială (Google Gemini) pe baza datelor reale din DB">★ AI</span>
-        <h4 style="font-family:'Fraunces',serif">Match Report</h4>
+        <h4 style="font-family:'Fraunces',serif">Raport meci</h4>
       </div>
       <button class="btn sm primary" onclick="generateReport()">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L13.5 8L20 9L15 13.5L16.5 20L12 16.5L7.5 20L9 13.5L4 9L10.5 8Z"/></svg>
@@ -650,16 +699,17 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
   </div>
 
   <!-- Card Score & Form -->
-  <div class="section-label">
+  <div class="section-label" data-insight-anchor="player-score-line">
     <span class="num-tag">§ 01</span>
-    <h3>Score & form pe sezon</h3>
+    <h3>Evoluția scorului pe sezon</h3>
     <span class="rule"></span>
     <span class="aside" title="Linia neagră = scor compus per meci. Linia gri = media sezonului. Stacked bar = breakdown mediu pe componente.">scor compus per meci · breakdown 5 componente</span>
   </div>
   <div class="card" style="margin-bottom:24px">
     <div class="chart-wrap tall"><canvas id="playerScoreLine"></canvas></div>
     <div style="margin-top:18px">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Breakdown mediu / meci · contribuția fiecărei componente la scor</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Profil jucător · cum își câștigă scorul</div>
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:12px;line-height:1.4">Fiecare procent arată cât din contribuția pozitivă vine din acea componentă. <strong>Dominant</strong> = peste 35% (specializat). <strong>Mediu</strong> = 10-20% (echilibrat). <strong>Limitat</strong> = sub 10%. Riscul scade din contribuția pozitivă.</div>
       <div id="playerBreakdownTiles" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px"></div>
     </div>
   </div>
@@ -688,7 +738,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <div class="card">
       <div class="meta-row">
         <div>
-          <h4>Line-breaking runs</h4>
+          <h4>Progresia mingii spre poartă</h4>
           <div class="desc" style="margin-top:4px"><abbr title="Curse cu mingea care progresează spre poarta adversă">Prog runs</abbr> · <abbr title="Pase printre fundași">Through</abbr> · <abbr title="Pase reușite în treimea adversă">Final 3rd</abbr> · <abbr title="Pase creative care sparg liniile">Smart</abbr></div>
         </div>
       </div>
@@ -697,10 +747,53 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     </div>
   </div>
 
-  <!-- Card Attacking Patterns -->
+  <!-- Card Performance Tracking (GPS) -->
   <div class="section-label">
     <span class="num-tag">§ 03</span>
-    <h3>Contribuție la pattern-uri de atac</h3>
+    <h3>Date din antrenamente · GPS</h3>
+    <span class="rule"></span>
+    <span class="aside" title="Date de la device-uri portabile (Catapult/STATSports) la antrenamente. Acoperă noiembrie + decembrie 2025.">noiembrie + decembrie 2025</span>
+  </div>
+  <div class="card" id="player-training-card" style="margin-bottom:24px">
+    <div id="player-training-empty" style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem">Fără date GPS pentru acest jucător.</div>
+    <div id="player-training-content" style="display:none">
+      <!-- Profil atletic — un singur paragraf narativ -->
+      <div id="player-athlete-profile" style="background:linear-gradient(135deg,#FAFAF7,#F4F3EE);border:1px solid var(--rule);border-radius:8px;padding:18px;margin-bottom:18px"></div>
+
+      <!-- Calendar de antrenamente -->
+      <div style="margin-bottom:18px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Ritm de antrenament</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.4">Fiecare pătrat = o zi. <strong>Cu cât e mai închis, cu atât distanța din ziua respectivă a fost mai mare.</strong> Hover pe pătrat pentru detalii.</div>
+        <div id="player-calendar" style="overflow-x:auto;padding:6px 0"></div>
+        <div style="display:flex;gap:18px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">
+          <span>Mai puțin</span>
+          <span style="display:inline-flex;gap:3px;align-items:center">
+            <span style="width:11px;height:11px;background:#F4F3EE;border-radius:2px"></span>
+            <span style="width:11px;height:11px;background:#D5DEDF;border-radius:2px"></span>
+            <span style="width:11px;height:11px;background:#7BA294;border-radius:2px"></span>
+            <span style="width:11px;height:11px;background:#3F7355;border-radius:2px"></span>
+            <span style="width:11px;height:11px;background:#0E4D2A;border-radius:2px"></span>
+          </span>
+          <span>Mai mult</span>
+        </div>
+      </div>
+
+      <!-- Athletic profile — radar simplu cu interpretare lângă -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Profil atletic</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px;line-height:1.4">Comparație jucător (negru) vs media echipei (gri). Cu cât pătratul e mai întins într-o direcție, cu atât jucătorul e mai puternic acolo.</div>
+          <div class="chart-wrap" style="height:240px"><canvas id="playerAthleteRadar"></canvas></div>
+        </div>
+        <div id="player-athlete-stats" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Attacking Patterns -->
+  <div class="section-label" data-insight-anchor="player-attack">
+    <span class="num-tag">§ 04</span>
+    <h3>Contribuție la stilul de atac al echipei</h3>
     <span class="rule"></span>
     <span class="aside" title="Radar individual (negru) suprapus pe radar mediu echipă (gri). Vezi pe ce direcție de atac contribuie cel mai mult.">individual vs media echipă</span>
   </div>
@@ -716,7 +809,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:10px">
         <span class="tag-ai" title="Generat de Google Gemini pe baza datelor reale">★ AI</span>
-        <h4 style="font-family:'Fraunces',serif">Player Summary</h4>
+        <h4 style="font-family:'Fraunces',serif">Profil scurt al jucătorului</h4>
       </div>
       <button class="btn sm primary" onclick="generatePlayerSummary()">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L13.5 8L20 9L15 13.5L16.5 20L12 16.5L7.5 20L9 13.5L4 9L10.5 8Z"/></svg>
@@ -751,7 +844,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     <button class="chip-btn" data-q="Care e cea mai bună partidă a sezonului?">Cel mai bun meci</button>
   </div>
   <div class="msgs" id="msgs">
-    <div class="msg assistant">Salut. Te pot ajuta cu analiza meciurilor sau a jucătorilor Cluj. Alege un chip sau scrie o întrebare.</div>
+    <div class="msg assistant">Salut. Te pot ajuta cu analiza meciurilor sau a jucătorilor Cluj. Apasă pe una din întrebările sugerate de mai sus sau scrie tu una.</div>
   </div>
   <div class="chat-input">
     <input id="chat-input" placeholder="Întreabă ceva..."/>
@@ -1723,10 +1816,10 @@ function renderAiTrends(r){
       </ul>`;
   };
   return `
-    ${section('▲ Rising players',r.rising_players,'#1E7A3A')}
-    ${section('▼ Declining players',r.declining_players,'#B42318')}
-    ${r.tactical_shifts&&r.tactical_shifts.length?`<h4 style="margin:16px 0 8px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Tactical shifts</h4><ul style="margin:0;padding-left:18px;line-height:1.6">${r.tactical_shifts.map(s=>`<li>${s}</li>`).join('')}</ul>`:''}
-    ${section('⚠ Attention flags',r.attention_flags,'#B8860B')}
+    ${section('▲ Jucători în formă',r.rising_players,'#1E7A3A')}
+    ${section('▼ Jucători în cădere',r.declining_players,'#B42318')}
+    ${r.tactical_shifts&&r.tactical_shifts.length?`<h4 style="margin:16px 0 8px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Schimbări de joc</h4><ul style="margin:0;padding-left:18px;line-height:1.6">${r.tactical_shifts.map(s=>`<li>${s}</li>`).join('')}</ul>`:''}
+    ${section('⚠ De urmărit',r.attention_flags,'#B8860B')}
   `;
 }
 
@@ -1786,7 +1879,8 @@ async function askQuestionReal(q){
   try{
     const r = await apiPost('/ai/chat/', {messages:chatHistory});
     const reply = r.reply || r.error || '(fără răspuns)';
-    t.innerHTML = reply.replace(/\n/g,'<br>');
+    let html = reply.replace(/\n/g,'<br>');
+    t.innerHTML = html;
     chatHistory.push({role:'assistant',content:reply});
   } catch(e){
     t.innerHTML = `<em>Eroare AI: ${e.message}</em>`;
@@ -2257,6 +2351,208 @@ function pitchUpdateOpponentLabel(){
   }
 }
 
+/* =============== AI F1 — COACH BRIEF =============== */
+async function generateCoachBrief(){
+  const el = document.getElementById('ai-coach-brief-body');
+  el.innerHTML = `<div class="skeleton" style="height:300px"></div>`;
+  try {
+    const r = await apiGet('/season/coach-brief/');
+    if (r.error) {
+      el.innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center"><strong>AI error:</strong> ${r.error}</div>`;
+      return;
+    }
+    el.innerHTML = renderCoachBrief(r);
+  } catch(e){
+    el.innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center"><strong>Eroare:</strong> ${e.message}</div>`;
+  }
+}
+function renderCoachBrief(r){
+  const sec = (icon, title, color, data) => {
+    if (!data) return '';
+    const labelMap = {
+      'Leaderi':'Cei mai buni',
+      'Motoare':'Cei care duc echipa înainte',
+      'Îngrijorări':'Jucători de urmărit',
+      'Blocaje':'Unde se blochează jocul',
+      'Principali contributori':'Cei mai mari contributori',
+    };
+    const list = (items, label) => items && items.length
+      ? `<div style="margin-top:8px"><div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">${labelMap[label]||label}</div><ul style="margin:0;padding-left:18px;line-height:1.5;font-size:.88rem">${items.map(i => `<li><strong>${i.name||''}</strong>${i.reason?` — ${i.reason}`:''}${i.context?` — ${i.context}`:''}${i.stat?` — ${i.stat}`:''}</li>`).join('')}</ul></div>`
+      : '';
+    const reco = data.recommendation
+      ? `<div style="background:#FEF3C7;border-left:3px solid #F59E0B;padding:10px 12px;border-radius:4px;margin-top:10px;font-size:.88rem"><svg style="display:inline;vertical-align:middle;margin-right:6px;color:#B8860B" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg><strong>Recomandare pentru antrenor:</strong> ${data.recommendation}</div>`
+      : '';
+    const pattern = data.pattern ? `<div style="font-size:.85rem;margin-top:6px;color:var(--muted)"><em>Tipar observat:</em> ${data.pattern}</div>` : '';
+    const won = data.vs_won ? `<div style="font-size:.85rem;margin-top:6px;color:#1E7A3A"><strong>În meciurile câștigate:</strong> ${data.vs_won}</div>` : '';
+    const lost = data.vs_lost ? `<div style="font-size:.85rem;margin-top:4px;color:#B42318"><strong>În meciurile pierdute:</strong> ${data.vs_lost}</div>` : '';
+    return `
+    <div style="border-left:4px solid ${color};padding:14px 16px;margin-bottom:14px;background:#fff;border-radius:6px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:1.3rem">${icon}</span><h5 style="margin:0;font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem">${title}</h5></div>
+      <div style="font-size:.92rem;line-height:1.5">${data.summary||''}</div>
+      ${pattern}${won}${lost}
+      ${list(data.leaders, 'Leaderi')}
+      ${list(data.engine, 'Motoare')}
+      ${list(data.concerns, 'Îngrijorări')}
+      ${list(data.blockers, 'Blocaje')}
+      ${list(data.key_offenders, 'Principali contributori')}
+      ${reco}
+    </div>`;
+  };
+  return [
+    sec('📊', 'Scoruri jucători', '#0A0A0B', r.player_scores),
+    sec('🛡️', 'Pierderi de minge', '#B42318', r.ball_loss_zones),
+    sec('🎯', 'Progresia mingii spre poartă', '#2563EB', r.line_breaking_runs),
+    sec('⚔️', 'Stil de atac', '#1E7A3A', r.attacking_patterns),
+  ].join('');
+}
+
+/* =============== AI F4 — CROSS-INSIGHT =============== */
+async function generateCrossInsights(){
+  const el = document.getElementById('ai-cross-body');
+  el.innerHTML = `<div class="skeleton" style="height:240px"></div>`;
+  try {
+    const r = await apiGet('/season/cross-insights/');
+    if (r.error) {
+      el.innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center"><strong>AI error:</strong> ${r.error}</div>`;
+      return;
+    }
+    el.innerHTML = renderCrossInsights(r);
+  } catch(e){
+    el.innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center"><strong>Eroare:</strong> ${e.message}</div>`;
+  }
+}
+function renderCrossInsights(r){
+  const axisColor = (a) => {
+    const norm = (a||'').toLowerCase();
+    if (norm.includes('scor')) return '#0A0A0B';
+    if (norm.includes('pierd') || norm.includes('loss')) return '#B42318';
+    if (norm.includes('line') || norm.includes('break') || norm.includes('progr')) return '#2563EB';
+    if (norm.includes('atac') || norm.includes('attack')) return '#1E7A3A';
+    return '#9A9A9F';
+  };
+  const axisLabel = (a) => {
+    const norm = (a||'').toLowerCase();
+    if (norm.includes('scor')) return 'SCORURI';
+    if (norm.includes('pierd') || norm.includes('loss')) return 'PIERDERI';
+    if (norm.includes('line') || norm.includes('break') || norm.includes('progr')) return 'PROGRESIE';
+    if (norm.includes('atac') || norm.includes('attack')) return 'ATAC';
+    return (a||'').toUpperCase();
+  };
+  const corrs = (r.correlations || []).map(c => `
+    <div style="padding:14px 16px;background:#fff;border:1px solid var(--rule);border-radius:6px;margin-bottom:10px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        ${(c.axes_involved||[]).map(a => `<span style="background:${axisColor(a)};color:#fff;font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:3px;letter-spacing:.06em;font-weight:700;text-transform:uppercase">${axisLabel(a)}</span>`).join('')}
+      </div>
+      <div style="font-size:.95rem;font-weight:600;line-height:1.4;margin-bottom:6px">${c.finding||''}</div>
+      <div style="font-size:.85rem;color:var(--muted);line-height:1.4;margin-bottom:6px">${c.implication||''}</div>
+      ${(c.evidence_players && c.evidence_players.length) ? `<div style="font-size:.78rem;color:var(--muted);font-family:'JetBrains Mono',monospace"><em>Vezi mai ales:</em> ${c.evidence_players.slice(0,3).join(' · ')}</div>` : ''}
+    </div>
+  `).join('');
+  const teamPattern = r.team_pattern ? `<div style="margin-top:14px;padding:12px;background:#F4F3EE;border-radius:6px;font-size:.92rem"><strong>Profilul de joc al echipei:</strong> ${r.team_pattern}</div>` : '';
+  const reco = r.key_recommendation ? `<div style="background:#FEF3C7;border-left:3px solid #F59E0B;padding:12px;border-radius:4px;margin-top:10px;font-size:.92rem"><svg style="display:inline;vertical-align:middle;margin-right:6px;color:#B8860B" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg><strong>Cel mai important lucru de făcut:</strong> ${r.key_recommendation}</div>` : '';
+  return corrs + teamPattern + reco;
+}
+
+/* =============== AI ✨ INSIGHT BUTTONS =============== */
+const _insightCache = new Map();
+function attachInsight(triggerEl, contextKey, getData){
+  if(!triggerEl || triggerEl.dataset.insightAttached) return;
+  triggerEl.dataset.insightAttached = '1';
+  // create body element after the trigger's parent card (or right after trigger)
+  const body = document.createElement('div');
+  body.style.cssText = 'display:none;margin-top:10px;padding:12px;background:linear-gradient(135deg,#FAFAF7,#F4F3EE);border:1px solid var(--rule);border-radius:6px;font-size:.88rem;line-height:1.5;color:#27272A';
+  body.innerHTML = '<span style="color:var(--muted)">…</span>';
+  triggerEl.insertAdjacentElement('afterend', body);
+
+  triggerEl.addEventListener('click', async () => {
+    const data = (typeof getData === 'function') ? getData() : getData;
+    const key = `${contextKey}:${JSON.stringify(data).length}:${(data && data.match_id)||''}:${(data && data.player_id)||''}`;
+    if (_insightCache.has(key)) {
+      body.innerHTML = `<strong style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--muted)">★ AI EXPLICĂ</strong><div style="margin-top:6px">${_insightCache.get(key)}</div>`;
+      body.style.display = '';
+      return;
+    }
+    body.style.display = '';
+    body.innerHTML = `<div class="skeleton" style="height:48px"></div>`;
+    try {
+      const r = await apiPost('/ai/explain/', { context: contextKey, data });
+      const txt = r.explanation || r.error || '(fără răspuns)';
+      _insightCache.set(key, txt);
+      body.innerHTML = `<strong style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;color:var(--muted)">★ AI EXPLICĂ</strong><div style="margin-top:6px">${txt}</div>`;
+    } catch(e) {
+      body.innerHTML = `<span style="color:var(--muted)">Eroare AI: ${e.message}</span>`;
+    }
+  });
+}
+function makeInsightButton(){
+  const b = document.createElement('button');
+  b.className = 'btn sm';
+  b.style.cssText = 'background:#fff;border:1px solid var(--rule);color:var(--ink);padding:5px 10px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:\'JetBrains Mono\',monospace;font-size:.66rem;font-weight:700;letter-spacing:.06em';
+  b.innerHTML = '<span style="color:#D64933">★</span> EXPLICĂ-MI AI';
+  b.title = 'AI-ul îți explică ce vezi în acest grafic';
+  return b;
+}
+function injectInsightOnHeader(headerSelector, contextKey, getData){
+  const header = document.querySelector(headerSelector);
+  if(!header || header.querySelector('[data-insight-btn]')) return;
+  const btn = makeInsightButton();
+  btn.dataset.insightBtn = '1';
+  btn.style.marginLeft = 'auto';
+  // ensure header is flex
+  if(getComputedStyle(header).display !== 'flex'){
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.gap = '10px';
+  }
+  header.appendChild(btn);
+  attachInsight(btn, contextKey, getData);
+}
+
+/* Wire ✨ buttons on cards after the page renders */
+function wireInsightButtonsSeason(){
+  // top 10 stack list — header is the section-label above #season-top10
+  injectInsightOnHeader('.section-label[data-insight-anchor="season-top10"]', 'season_top10', () => {
+    return { top: TOP10 };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="season-trends"]', 'season_trends', () => {
+    return { trends: TRENDS };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="season-losers"]', 'season_ball_losses', () => {
+    return { team: FALLBACK.teamLosses, top: FALLBACK.losers };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="season-attack"]', 'season_attack_mix', () => {
+    return { mix: FALLBACK.attackMix };
+  });
+}
+function wireInsightButtonsMatch(){
+  injectInsightOnHeader('.section-label[data-insight-anchor="match-scores"]', 'match_player_scores', () => {
+    return { players: MATCH_PLAYERS.slice(0,12) };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="match-losses"]', 'match_losses', () => {
+    return { losers: MATCH_LOSERS };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="match-line-breaks"]', 'match_line_breaks', () => {
+    return { line_breaks: LINE_BREAKS };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="match-attack"]', 'match_attack', () => {
+    return { mix: MATCH_ATTACK };
+  });
+}
+function wireInsightButtonsPlayers(){
+  injectInsightOnHeader('.section-label[data-insight-anchor="player-score-line"]', 'player_score_line', () => {
+    if(!_currentPlayer) return {};
+    return { name: _currentPlayer.player.name, season_avg: _currentPlayer.score.season_avg, recent_avg: _currentPlayer.score.recent_avg, form_delta: _currentPlayer.score.form_delta, per_match: _currentPlayer.per_match };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="player-loss"]', 'player_loss_donut', () => {
+    if(!_currentPlayer) return {};
+    return { name: _currentPlayer.player.name, ball_loss: _currentPlayer.ball_loss };
+  });
+  injectInsightOnHeader('.section-label[data-insight-anchor="player-attack"]', 'player_attack_radar', () => {
+    if(!_currentPlayer) return {};
+    return { name: _currentPlayer.player.name, attack: _currentPlayer.attack, team_attack_mix: _currentPlayer.team_attack_mix };
+  });
+}
+
 /* =============== PLAYERS TAB =============== */
 let _playersTabInited = false;
 let _currentPlayer = null;
@@ -2280,20 +2576,249 @@ async function initPlayersTab(){
 async function loadPlayerDetail(wyId){
   document.getElementById('player-ai-body').innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem">Apasă <strong>Generate</strong> pentru analiză tactică narativă pe baza datelor reale.</div>`;
   try {
-    const d = await apiGet(`/players/${wyId}/`);
-    _currentPlayer = d;
-    renderPlayerHeader(d);
-    renderPlayerScoreLine(d);
-    renderPlayerBreakdownBar(d);
-    renderPlayerLossDonut(d);
-    renderPlayerLossStats(d);
-    renderPlayerLineBreakBar(d);
-    renderPlayerLineBreakStats(d);
-    renderPlayerAttackRadar(d);
-    renderPlayerAttackStats(d);
+    const d = await apiGet(`/players/${wyId}/`).catch(()=>null);
+    if (d) {
+      _currentPlayer = d;
+      renderPlayerHeader(d);
+      renderPlayerScoreLine(d);
+      renderPlayerBreakdownBar(d);
+      renderPlayerLossDonut(d);
+      renderPlayerLossStats(d);
+      renderPlayerLineBreakBar(d);
+      renderPlayerLineBreakStats(d);
+      renderPlayerAttackRadar(d);
+      renderPlayerAttackStats(d);
+    } else {
+      // Training-only player: render minimal header with name from dropdown
+      _currentPlayer = null;
+      renderPlayerHeaderMinimal(wyId);
+    }
   } catch(e){
     console.warn('player detail failed', e);
   }
+  // Training data (separate, may exist even when match data is missing)
+  loadPlayerTraining(wyId).catch(e=>console.warn('training failed', e));
+}
+
+function renderPlayerHeaderMinimal(wyId){
+  const sel = document.getElementById('player-select');
+  const opt = sel.options[sel.selectedIndex];
+  const name = opt ? opt.text.split(' · ')[0] : `Player ${wyId}`;
+  const initials = name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+  document.getElementById('player-header').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px">
+      ${avatarHtml(name, initials, 64)}
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700">${name}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted)">U21 / probă · doar date GPS antrenamente</span>
+        <div><span style="background:#B8860B;color:#fff;font-size:.65rem;padding:3px 8px;border-radius:3px;letter-spacing:.06em;font-weight:700">FĂRĂ DATE WYSCOUT</span></div>
+      </div>
+    </div>`;
+  // Clear non-training cards
+  ['playerScoreLine','playerLoss','playerLineBreak','playerAttack','playerBreakdown'].forEach(k=>{
+    if(charts[k]){charts[k].destroy();charts[k]=null;}
+  });
+  document.getElementById('playerBreakdownTiles').innerHTML = '<div style="grid-column:span 5;color:var(--muted);text-align:center;padding:14px">Fără date Wyscout pentru acest jucător.</div>';
+  document.getElementById('player-loss-stats').innerHTML = '';
+  document.getElementById('player-loss-danger').textContent = '—';
+  document.getElementById('player-linebreak-stats').innerHTML = '';
+  document.getElementById('player-attack-stats').innerHTML = '';
+}
+
+async function loadPlayerTraining(wyId){
+  const empty = document.getElementById('player-training-empty');
+  const content = document.getElementById('player-training-content');
+  try {
+    const t = await apiGet(`/players/${wyId}/training/`);
+    if (!t || !t.load) { empty.style.display=''; content.style.display='none'; return; }
+    empty.style.display = 'none';
+    content.style.display = '';
+    renderAthleteProfileText(t.load);
+    renderTrainingCalendar(t.timeline);
+    renderAthleteRadar(t.load);
+    renderAthleteStats(t.load);
+  } catch(e){
+    empty.style.display=''; content.style.display='none';
+  }
+}
+
+function _profileLabel(load){
+  // Classify based on rank percentiles
+  const total = load.distance_rank.total || 1;
+  const distP = (load.distance_rank.rank || total) / total;  // lower = better
+  const hsrP  = (load.hsr_rank.rank || total) / total;
+  const sprP  = (load.sprint_rank.rank || total) / total;
+  // Top quartile = <=0.25
+  const top = (p) => p <= 0.30;
+  const bot = (p) => p >= 0.75;
+  if (top(distP) && top(sprP)) return { tag:'BOX-TO-BOX', desc:'Volum mare + viteză mare. Profil complet, jucător de tranziții.', emoji:'⚡' };
+  if (top(distP) && top(hsrP)) return { tag:'ANDURANȚĂ', desc:'Distanță mare cu multă alergare la viteză susținută. Tipic mijlocaș central.', emoji:'🏃' };
+  if (top(sprP) && !top(distP)) return { tag:'SPRINTER PUR', desc:'Pune viteză maximă pe distanțe scurte. Profil de extremă/atacant.', emoji:'💨' };
+  if (top(distP) && bot(sprP)) return { tag:'POSESIE', desc:'Volum mare la intensitate medie. Caută echilibrul, dictează ritmul.', emoji:'🎯' };
+  if (bot(distP) && bot(sprP)) return { tag:'STATIC', desc:'Volum mic, sprint mic. Probabil portar sau profil specializat.', emoji:'🥅' };
+  return { tag:'ECHILIBRAT', desc:'Profil mediu pe toate dimensiunile, fără excese.', emoji:'⚖' };
+}
+
+function renderAthleteProfileText(load){
+  const p = _profileLabel(load);
+  const total = load.distance_rank.total || 1;
+  const periodTxt = load.period_first && load.period_last
+    ? `${load.period_first} – ${load.period_last}`
+    : 'noiembrie–decembrie 2025';
+  document.getElementById('player-athlete-profile').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="font-size:2rem">${p.emoji}</span>
+      <div style="flex:1;min-width:180px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:600">Profil atletic</div>
+        <div style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;letter-spacing:-.01em;margin-top:2px">${p.tag}</div>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Distanță totală</div><div style="font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums">${load.total_distance_km} <span style="font-size:.7rem;color:var(--muted)">km</span></div><div style="font-size:.7rem;color:var(--muted)">locul ${load.distance_rank.rank} din ${load.distance_rank.total}</div></div>
+        <div><div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Sprint 25+ km/h</div><div style="font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums">${load.total_max_sprint_m.toLocaleString('ro')} <span style="font-size:.7rem;color:var(--muted)">m</span></div><div style="font-size:.7rem;color:var(--muted)">locul ${load.sprint_rank.rank} din ${load.sprint_rank.total}</div></div>
+        <div><div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Sesiuni</div><div style="font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums">${load.total_sessions}</div><div style="font-size:.7rem;color:var(--muted)">~${load.sessions_per_week_avg}/săpt</div></div>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:.92rem;line-height:1.5;color:#27272A">${p.desc}</div>
+    <div style="margin-top:6px;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.06em">Perioadă date: ${periodTxt}</div>`;
+}
+
+function renderTrainingCalendar(timeline){
+  const el = document.getElementById('player-calendar');
+  // Group sessions by date, sum distance
+  const byDate = {};
+  timeline.forEach(s => {
+    if (!s.date) return;
+    if (!byDate[s.date]) byDate[s.date] = { distance: 0, sessions: 0, sprint: 0, types: [] };
+    byDate[s.date].distance += s.distance_m || 0;
+    byDate[s.date].sessions += 1;
+    byDate[s.date].sprint += s.max_sprint_m || 0;
+    if (s.session_type) byDate[s.date].types.push(s.session_type);
+  });
+  const dates = Object.keys(byDate).sort();
+  if (dates.length === 0) {
+    el.innerHTML = `<div style="color:var(--muted);padding:14px;text-align:center;font-size:.85rem">Datele nu conțin zile parsabile.</div>`;
+    return;
+  }
+  // Build full date range Mon-Sun, weeks as columns
+  const firstDate = new Date(dates[0]);
+  const lastDate = new Date(dates[dates.length - 1]);
+  // Snap firstDate to Monday of that week
+  const start = new Date(firstDate);
+  const dow = (start.getDay() + 6) % 7;  // Mon=0
+  start.setDate(start.getDate() - dow);
+  const end = new Date(lastDate);
+
+  const maxDist = Math.max(...Object.values(byDate).map(d => d.distance), 1);
+  const colorFor = (dist) => {
+    if (dist === 0) return '#F4F3EE';
+    const r = dist / maxDist;
+    if (r < 0.2) return '#D5DEDF';
+    if (r < 0.45) return '#7BA294';
+    if (r < 0.7) return '#3F7355';
+    return '#0E4D2A';
+  };
+  // Build grid: 7 rows (Mon..Sun), N cols (weeks)
+  const weeks = [];
+  let cursor = new Date(start);
+  while (cursor <= end || cursor.getDay() !== 1) {
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+      const iso = cursor.toISOString().slice(0, 10);
+      week.push({ date: iso, data: byDate[iso] || null, inRange: cursor >= firstDate && cursor <= end });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    weeks.push(week);
+    if (cursor > end && weeks.length > 12) break;
+  }
+  const dayNames = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  const monthLabels = [];
+  let lastMonth = -1;
+  weeks.forEach((w, i) => {
+    const m = new Date(w[0].date).getMonth();
+    if (m !== lastMonth) {
+      monthLabels.push({ idx: i, name: ['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'][m] });
+      lastMonth = m;
+    }
+  });
+
+  let html = `<div style="display:inline-grid;grid-template-columns:auto repeat(${weeks.length},14px);grid-template-rows:14px repeat(7,14px);gap:3px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted)">`;
+  // top row: month labels
+  html += `<div></div>`;
+  for (let i = 0; i < weeks.length; i++) {
+    const lbl = monthLabels.find(m => m.idx === i);
+    html += `<div style="grid-row:1;grid-column:${i+2};font-size:.58rem">${lbl ? lbl.name : ''}</div>`;
+  }
+  // 7 day rows
+  for (let d = 0; d < 7; d++) {
+    html += `<div style="grid-row:${d+2};grid-column:1;font-size:.55rem;align-self:center">${dayNames[d]}</div>`;
+  }
+  weeks.forEach((week, wi) => {
+    week.forEach((cell, di) => {
+      const c = cell.data;
+      const color = c ? colorFor(c.distance) : '#FAFAF7';
+      const tooltip = c
+        ? `${cell.date} · ${c.sessions} sesiune${c.sessions>1?'i':''} · ${(c.distance/1000).toFixed(1)} km · sprint ${c.sprint}m${c.types.length?' · '+c.types.join(', '):''}`
+        : `${cell.date} · zi liberă`;
+      html += `<div title="${tooltip}" style="grid-row:${di+2};grid-column:${wi+2};width:14px;height:14px;background:${color};border-radius:2px;cursor:help;${cell.inRange?'':'opacity:.4'}"></div>`;
+    });
+  });
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function renderAthleteRadar(load){
+  const ctx = document.getElementById('playerAthleteRadar');
+  if(charts.playerAthlete) charts.playerAthlete.destroy();
+  // Convert to "athletic profile" 6-axis: endurance, work-rate, HSR, sprint, accel, decel
+  // Normalize each metric vs squad max → 0-100 scale for the player
+  // We don't have squad max client-side; use simple per-90 normalization with sane caps
+  const sessions = Math.max(load.total_sessions, 1);
+  const norm = (v, cap) => Math.min(100, (v / cap) * 100);
+  const data = [
+    norm(load.total_distance_km, 110),       // endurance: 110km cap (over 2 months)
+    norm(load.avg_work_rate, 90),            // work rate: 90 m/min cap
+    norm(load.total_hsr_m / sessions, 1000), // HSR/session: 1000m cap
+    norm(load.total_max_sprint_m / sessions, 150), // sprint/session: 150m cap
+    norm(load.total_high_int_acc_m / sessions, 250),
+    norm(load.total_high_int_dec_m / sessions, 250),
+  ];
+  // Approximate "team avg" — use a flat 50% as benchmark line
+  const teamAvg = [50, 50, 50, 50, 50, 50];
+  charts.playerAthlete = new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels:['Anduranță','Ritm','High Speed Run','Sprint maxim','Accelerații','Decelerații'],
+      datasets:[
+        {label:'Jucător', data, backgroundColor:'rgba(10,10,11,0.18)', borderColor:'#0A0A0B', pointBackgroundColor:'#0A0A0B', borderWidth:2, pointRadius:4},
+        {label:'Reper mediu', data:teamAvg, backgroundColor:'rgba(154,154,159,0.10)', borderColor:'#9A9A9F', borderDash:[5,5], pointRadius:0},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},pointLabels:{font:{size:11,weight:'600'}}}},
+      plugins:{
+        legend:{position:'top',align:'end',labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{label:(c)=>`${c.dataset.label}: ${c.parsed.r.toFixed(0)}/100`}}
+      }
+    }
+  });
+}
+
+function renderAthleteStats(load){
+  const items = [
+    { label:'Distanță / sesiune', value:`${(load.avg_distance_per_session/1000).toFixed(1)} km`, hint:'Cât aleargă în medie pe o sesiune' },
+    { label:'Ritm de lucru', value:`${load.avg_work_rate} m/min`, hint:'Distanță parcursă per minut — cu cât mai mare, cu atât mai intens' },
+    { label:'High-speed running total', value:`${(load.total_hsr_m/1000).toFixed(1)} km`, hint:'Distanța în zona 15-20 km/h cumulat' },
+    { label:'Accelerații intense', value:`${load.total_accel_high_pos}`, hint:'Număr de accelerări peste 4 m/s² (sprint din loc)' },
+    { label:'Frânări intense', value:`${load.total_accel_high_neg}`, hint:'Decelerări peste -4 m/s² — stress musculatura' },
+    { label:'Putere medie', value:`${load.avg_power_wkg} W/kg`, hint:'Energia metabolică medie — indicator de încărcare' },
+  ];
+  document.getElementById('player-athlete-stats').innerHTML = items.map(it => `
+    <div title="${it.hint}" style="display:flex;justify-content:space-between;padding:9px 12px;background:#FAFAF7;border-radius:4px;cursor:help">
+      <span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em">${it.label}</span>
+      <strong style="font-variant-numeric:tabular-nums;font-size:.95rem">${it.value}</strong>
+    </div>
+  `).join('');
 }
 
 function renderPlayerHeader(d){
@@ -2378,31 +2903,71 @@ function renderPlayerBreakdownBar(d){
   const el = document.getElementById('playerBreakdownTiles');
   if(!el) return;
   const b = d.score.breakdown_avg;
+  // Compute percentage share of POSITIVE contribution (att + prog + pass + def)
+  const positives = ['att','prog','pass','def'];
+  const totalPos = positives.reduce((s,k)=>s + Math.max(0, b[k]||0), 0) || 1;
+  // Risk is shown as % drag on the score
   const components = [
-    { key:'att',  label:'Atac',      val:b.att,  color:COMPONENT_COLORS.att,  hint:'Goluri, asisturi, xG, pase cheie, atingeri în careu' },
-    { key:'prog', label:'Progresie', val:b.prog, color:COMPONENT_COLORS.prog, hint:'Pase progresive, pase în ultimul third, curse cu mingea, accelerări, dribbling-uri' },
-    { key:'pass', label:'Pase',      val:b.pass, color:COMPONENT_COLORS.pass, hint:'Pase reușite, pase înainte; pase ratate scad scorul' },
-    { key:'def',  label:'Apărare',   val:b.def,  color:COMPONENT_COLORS.def,  hint:'Intercepții, aluneări, degajări, recuperări, dueluri câștigate' },
-    { key:'risk', label:'Risc',      val:b.risk, color:COMPONENT_COLORS.risk, hint:'Pierderi periculoase în propria jumătate (negativ)' },
+    { key:'att',  label:'Atac',      val:b.att,  color:COMPONENT_COLORS.att,
+      hint:'Cât contribuie la fazele ofensive: goluri, asisturi, xG, pase cheie, atingeri în careu.' },
+    { key:'prog', label:'Progresie', val:b.prog, color:COMPONENT_COLORS.prog,
+      hint:'Cât duce mingea înainte: pase progresive, pase în ultima treime, curse, dribbling.' },
+    { key:'pass', label:'Pase',      val:b.pass, color:COMPONENT_COLORS.pass,
+      hint:'Cât de bine distribuie mingea: pase reușite, pase înainte; pase ratate scad valoarea.' },
+    { key:'def',  label:'Apărare',   val:b.def,  color:COMPONENT_COLORS.def,
+      hint:'Cât contribuie defensiv: intercepții, aluneări, degajări, recuperări, dueluri câștigate.' },
   ];
-  // Find max abs for relative scaling
-  const maxAbs = Math.max(...components.map(c => Math.abs(c.val)), 1);
-  el.innerHTML = components.map(c => {
-    const pct = Math.min(100, Math.abs(c.val) / maxAbs * 100);
-    const valDisplay = (c.val >= 0 ? '+' : '') + c.val.toFixed(1);
-    const isNegative = c.val < 0;
+  const interpret = (pct) => {
+    if (pct >= 35) return { label:'DOMINANT', color:'#1E7A3A' };
+    if (pct >= 20) return { label:'PUTERNIC', color:'#1E7A3A' };
+    if (pct >= 10) return { label:'MEDIU',    color:'#B8860B' };
+    if (pct >= 3)  return { label:'LIMITAT',  color:'#9A9A9F' };
+    return { label:'NEGLIJABIL', color:'#9A9A9F' };
+  };
+  let html = components.map(c => {
+    const safe = Math.max(0, c.val);
+    const pct = Math.round(safe * 100 / totalPos);
+    const tag = interpret(pct);
     return `
-    <div title="${c.hint}" style="background:#FAFAF7;border:1px solid var(--rule);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;cursor:help">
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;background:${c.color};border-radius:50%;display:inline-block"></span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600">${c.label}</span>
+    <div title="${c.hint}" style="background:#FAFAF7;border:1px solid var(--rule);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:help">
+      <div style="display:flex;align-items:center;gap:6px;justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;background:${c.color};border-radius:50%;display:inline-block"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600">${c.label}</span>
+        </span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:${tag.color};letter-spacing:.06em;font-weight:700">${tag.label}</span>
       </div>
-      <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;color:${isNegative?'#B42318':'var(--ink)'}">${valDisplay}</div>
-      <div style="background:#E7E5DF;height:4px;border-radius:2px;overflow:hidden">
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span style="font-size:1.7rem;font-weight:800;font-variant-numeric:tabular-nums">${pct}<span style="font-size:.9rem;color:var(--muted)">%</span></span>
+      </div>
+      <div style="background:#E7E5DF;height:6px;border-radius:3px;overflow:hidden">
         <div style="background:${c.color};height:100%;width:${pct}%"></div>
       </div>
+      <div style="font-size:.7rem;color:var(--muted);line-height:1.3">din totalul contribuției pozitive</div>
     </div>`;
   }).join('');
+  // Risc tile — separat, arată cât scade scorul (procent din totalul pozitiv)
+  const risk = b.risk || 0;
+  const riskPct = Math.round(Math.abs(risk) * 100 / totalPos);
+  const riskTag = riskPct >= 15 ? {label:'RIDICAT',color:'#B42318'} : riskPct >= 7 ? {label:'MEDIU',color:'#B8860B'} : {label:'SCĂZUT',color:'#1E7A3A'};
+  html += `
+    <div title="Pierderi periculoase în propria jumătate. Scade scorul. Cât mai mic, cu atât mai bine." style="background:#FAFAF7;border:1px solid var(--rule);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:help">
+      <div style="display:flex;align-items:center;gap:6px;justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;background:${COMPONENT_COLORS.risk};border-radius:50%;display:inline-block"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600">Risc</span>
+        </span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:${riskTag.color};letter-spacing:.06em;font-weight:700">${riskTag.label}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span style="font-size:1.7rem;font-weight:800;font-variant-numeric:tabular-nums;color:#B42318">−${riskPct}<span style="font-size:.9rem;color:var(--muted)">%</span></span>
+      </div>
+      <div style="background:#E7E5DF;height:6px;border-radius:3px;overflow:hidden">
+        <div style="background:${COMPONENT_COLORS.risk};height:100%;width:${Math.min(100,riskPct)}%"></div>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);line-height:1.3">scade din contribuția pozitivă</div>
+    </div>`;
+  el.innerHTML = html;
 }
 
 function renderPlayerLossDonut(d){
@@ -2442,12 +3007,17 @@ function renderPlayerLossStats(d){
   const bl = d.ball_loss;
   const rank = d.rank_in_squad.dangerous_losses;
   const worst = bl.worst_match;
+  // Per-90 interpretation: 7+ = ridicat, 4-7 = mediu, <4 = scăzut
+  const per90Tag = bl.per90 >= 12 ? {l:'FOARTE RIDICAT',c:'#B42318'} : bl.per90 >= 7 ? {l:'RIDICAT',c:'#B8860B'} : bl.per90 >= 4 ? {l:'MEDIU',c:'#9A9A9F'} : {l:'SCĂZUT',c:'#1E7A3A'};
+  // Rank interpretation
+  const rankPct = rank.rank ? rank.rank / rank.total : 1;
+  const rankTag = rankPct <= 0.2 ? {l:'TOP RISC',c:'#B42318'} : rankPct <= 0.5 ? {l:'RISC PESTE MEDIE',c:'#B8860B'} : {l:'RISC MIC',c:'#1E7A3A'};
   document.getElementById('player-loss-stats').innerHTML = `
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Total pierderi</span><strong style="font-variant-numeric:tabular-nums">${bl.total_losses}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pierderi în treimea defensivă proprie">Periculoase</span><strong class="bad" style="font-variant-numeric:tabular-nums">${bl.dangerous}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Per 90'</span><strong style="font-variant-numeric:tabular-nums">${bl.per90}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Loc în clasamentul Cluj la pierderi periculoase">Rank periculoase</span><strong style="font-variant-numeric:tabular-nums">${rank.rank}/${rank.total}</strong></div>
-    ${worst?`<div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Cel mai slab meci</span><strong style="font-variant-numeric:tabular-nums">${worst.opponent} (${worst.dangerous_losses}p)</strong></div>`:''}
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Total pierderi</span><strong style="font-variant-numeric:tabular-nums">${bl.total_losses} <span style="color:var(--muted);font-weight:400;font-size:.7rem">(toate zonele)</span></strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pierderi în treimea defensivă proprie — pot duce la goluri primite">Periculoase</span><strong class="bad" style="font-variant-numeric:tabular-nums">${bl.dangerous}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pierderi de minge la fiecare 90 minute jucate">Per 90 min</span><strong style="font-variant-numeric:tabular-nums">${bl.per90} <span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:${per90Tag.c};font-weight:700;margin-left:4px">${per90Tag.l}</span></strong></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--rule)"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Locul în clasamentul lotului la pierderi periculoase (1 = pierde cel mai mult)">Rank în lot</span><strong style="font-variant-numeric:tabular-nums">${rank.rank}/${rank.total} <span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:${rankTag.c};font-weight:700;margin-left:4px">${rankTag.l}</span></strong></div>
+    ${worst?`<div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Cel mai slab meci</span><strong style="font-variant-numeric:tabular-nums">${worst.opponent} <span style="color:var(--muted);font-weight:400;font-size:.7rem">(${worst.dangerous_losses} pierderi periculoase)</span></strong></div>`:''}
   `;
 }
 
@@ -2489,9 +3059,11 @@ function renderPlayerLineBreakBar(d){
 
 function renderPlayerLineBreakStats(d){
   const lb = d.line_breaks;
+  // Per-90 interpretation: 5+ = mult, 2-5 = mediu, <2 = puține
+  const per90Tag = lb.per90 >= 5 ? {l:'CONTRIBUTOR PRINCIPAL',c:'#1E7A3A'} : lb.per90 >= 2 ? {l:'CONTRIBUTOR REGULAT',c:'#B8860B'} : {l:'IMPLICARE LIMITATĂ',c:'#9A9A9F'};
   document.getElementById('player-linebreak-stats').innerHTML = `
-    <div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.62rem">Total</span> <strong style="font-size:1rem">${lb.total}</strong></div>
-    <div><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.62rem">Per 90'</span> <strong style="font-size:1rem">${lb.per90}</strong></div>
+    <div title="Suma celor 4 acțiuni de spargere a liniilor în întreg sezonul"><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.62rem">Total acțiuni</span> <strong style="font-size:1rem;font-variant-numeric:tabular-nums">${lb.total}</strong></div>
+    <div title="Acțiuni de progresie / 90 min jucate"><span style="color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.62rem">La 90 min</span> <strong style="font-size:1rem;font-variant-numeric:tabular-nums">${lb.per90}</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:${per90Tag.c};font-weight:700;margin-left:4px">${per90Tag.l}</span></div>
   `;
 }
 
@@ -2532,13 +3104,22 @@ function renderPlayerAttackRadar(d){
 function renderPlayerAttackStats(d){
   const a = d.attack;
   const ranks = d.rank_in_squad;
-  const finishCls = a.finish_eff > 1 ? 'good' : a.finish_eff < -1 ? 'bad' : '';
+  // Finish efficiency interpretation
+  let finishLabel = '', finishCls = '';
+  if (a.finish_eff >= 3) { finishLabel = `+${a.finish_eff} goluri peste așteptat — finalizator clinic`; finishCls = 'good'; }
+  else if (a.finish_eff >= 0.5) { finishLabel = `+${a.finish_eff} goluri peste așteptat — eficient`; finishCls = 'good'; }
+  else if (a.finish_eff >= -0.5) { finishLabel = `≈ conform xG — finalizare medie`; finishCls = ''; }
+  else if (a.finish_eff >= -2) { finishLabel = `${a.finish_eff} sub xG — ratează ocazii`; finishCls = 'bad'; }
+  else { finishLabel = `${a.finish_eff} sub xG — sub-performanță acută`; finishCls = 'bad'; }
   document.getElementById('player-attack-stats').innerHTML = `
-    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Goluri</span><strong style="font-variant-numeric:tabular-nums">${a.goals} <span style="color:var(--muted);font-weight:400;font-size:.78rem">(rank ${ranks.goals.rank}/${ranks.goals.total})</span></strong></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Expected Goals — calitatea șuturilor">xG</span><strong style="font-variant-numeric:tabular-nums">${a.xg} <span style="color:var(--muted);font-weight:400;font-size:.78rem">(rank ${ranks.xg.rank}/${ranks.xg.total})</span></strong></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Goluri - xG: dacă pozitiv, peste-performanță la finalizare">Finish eff.</span><strong class="${finishCls}" style="font-variant-numeric:tabular-nums">${a.finish_eff>=0?'+':''}${a.finish_eff}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pase ce au dus la șut">Shot assists</span><strong style="font-variant-numeric:tabular-nums">${a.shot_assists}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Atingeri în careu">Touch in box</span><strong style="font-variant-numeric:tabular-nums">${a.touch_in_box}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Goluri marcate</span><strong style="font-variant-numeric:tabular-nums">${a.goals} <span style="color:var(--muted);font-weight:400;font-size:.7rem">locul ${ranks.goals.rank} din ${ranks.goals.total}</span></strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Expected Goals — câte goluri ar fi trebuit să marcheze din șuturile lui">Calitate șuturi (xG)</span><strong style="font-variant-numeric:tabular-nums">${a.xg} <span style="color:var(--muted);font-weight:400;font-size:.7rem">locul ${ranks.xg.rank} din ${ranks.xg.total}</span></strong></div>
+    <div style="padding:8px 12px;background:#FAFAF7;border-radius:4px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Goluri − xG. Cât de eficient finalizează în raport cu calitatea șanselor.">Eficiența finalizării</span><strong class="${finishCls}" style="font-variant-numeric:tabular-nums">${a.finish_eff>=0?'+':''}${a.finish_eff}</strong></div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:4px;line-height:1.3">${finishLabel}</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="Pase care au dus la șut (creație)">Pase la șut</span><strong style="font-variant-numeric:tabular-nums">${a.shot_assists}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FAFAF7;border-radius:4px"><span style="color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em" title="De câte ori a atins mingea în careul advers">Atingeri în careu</span><strong style="font-variant-numeric:tabular-nums">${a.touch_in_box}</strong></div>
   `;
 }
 
@@ -2564,6 +3145,9 @@ renderAttackRadar('attackRadar',FALLBACK.attackMix,'Sezon');
 renderSeasonLosers();
 populateMatchSelect();
 bindMatchSelect();
+wireInsightButtonsSeason();
+wireInsightButtonsMatch();
+wireInsightButtonsPlayers();
 
 /* Kick off API hydration after initial fallback render */
 (async ()=>{
