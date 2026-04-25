@@ -401,11 +401,11 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
           <div class="desc" style="margin-top:4px">Breakdown pe componente: atac · progresie · pasă · defensivă · risc (negativ).</div>
         </div>
         <div style="display:flex;gap:12px;font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace">
-          <span><span style="display:inline-block;width:10px;height:10px;background:#0A0A0B;vertical-align:middle;margin-right:4px"></span>ATT</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#3F3F46;vertical-align:middle;margin-right:4px"></span>PROG</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#A1A1AA;vertical-align:middle;margin-right:4px"></span>PASS</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#2563EB;vertical-align:middle;margin-right:4px"></span>DEF</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#D64933;vertical-align:middle;margin-right:4px"></span>RISK</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#D64933;vertical-align:middle;margin-right:4px;border-radius:2px"></span>ATAC</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#2563EB;vertical-align:middle;margin-right:4px;border-radius:2px"></span>PROGRESIE</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#14B8A6;vertical-align:middle;margin-right:4px;border-radius:2px"></span>PASE</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#1E7A3A;vertical-align:middle;margin-right:4px;border-radius:2px"></span>APĂRARE</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#92400E;vertical-align:middle;margin-right:4px;border-radius:2px"></span>RISC</span>
         </div>
       </div>
       <div class="stack-list" id="season-top10"></div>
@@ -540,8 +540,15 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
       <div class="meta-row">
         <div>
           <h4>Player scores — breakdown</h4>
-          <div class="desc" style="margin-top:4px">Top 10 jucători Cluj în acest meci.</div>
+          <div class="desc" style="margin-top:4px">Top 10 jucători Cluj în acest meci. Bara compusă din 5 componente; numărul din dreapta = scor total /100.</div>
         </div>
+      </div>
+      <div class="legend-row" style="display:flex;flex-wrap:wrap;gap:14px;font-size:.72rem;color:var(--muted);margin:6px 0 12px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase">
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#D64933;border-radius:2px;display:inline-block"></span>Atac</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#2563EB;border-radius:2px;display:inline-block"></span>Progresie</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#14B8A6;border-radius:2px;display:inline-block"></span>Pase</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#1E7A3A;border-radius:2px;display:inline-block"></span>Apărare</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;background:#92400E;border-radius:2px;display:inline-block"></span>Risc</span>
       </div>
       <div class="stack-list" id="match-top10"></div>
     </div>
@@ -651,9 +658,9 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
   </div>
   <div class="card" style="margin-bottom:24px">
     <div class="chart-wrap tall"><canvas id="playerScoreLine"></canvas></div>
-    <div style="margin-top:14px">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Breakdown mediu / meci</div>
-      <div class="chart-wrap" style="height:80px"><canvas id="playerBreakdownBar"></canvas></div>
+    <div style="margin-top:18px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Breakdown mediu / meci · contribuția fiecărei componente la scor</div>
+      <div id="playerBreakdownTiles" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px"></div>
     </div>
   </div>
 
@@ -850,6 +857,10 @@ const PLAYER_PHOTOS = {
   cosa:       'players/687395a2dbcc5Tudor Cosa.png',
   moraru:     'players/669a3e4827823Matei Moraru 01.png',
   orban:      'players/68e500b33922cORBAN_ALEX_MIHA.png',
+  tosca:      'players/ALIN TOSCA.webp',
+  olakunle:   'players/QUADRI OLAKUNLE.webp',
+  thiam:      'players/MAMADOU THIAM.webp',
+  artean:     'players/ANDREI ARTEAN.webp',
 };
 
 function playerPhoto(name){
@@ -971,7 +982,22 @@ Chart.defaults.font.size=11;
 Chart.defaults.color='#6B6B70';
 Chart.defaults.borderColor='#E7E5DF';
 const CHART_COLORS={ink:'#0A0A0B',g700:'#3F3F46',g400:'#A1A1AA',info:'#2563EB',red:'#D64933',warn:'#B8860B',win:'#1E7A3A',loss:'#B42318'};
-const SEG=[CHART_COLORS.ink,CHART_COLORS.g700,CHART_COLORS.g400,CHART_COLORS.info,CHART_COLORS.red];
+/* Distinct colors per breakdown component — semantic, clear at a glance */
+const COMPONENT_COLORS = {
+  att:  '#D64933',   /* roșu cărămiziu — atac, focus pe gol */
+  prog: '#2563EB',   /* albastru — avans pe teren */
+  pass: '#14B8A6',   /* teal — rețea de pase */
+  def:  '#1E7A3A',   /* verde — siguranță defensivă */
+  risk: '#92400E',   /* maro/burgundy — risc */
+};
+const COMPONENT_LABELS = {
+  att:  'Atac',
+  prog: 'Progresie',
+  pass: 'Pase',
+  def:  'Apărare',
+  risk: 'Risc',
+};
+const SEG = [COMPONENT_COLORS.att, COMPONENT_COLORS.prog, COMPONENT_COLORS.pass, COMPONENT_COLORS.def, COMPONENT_COLORS.risk];
 const charts={};
 
 /* =============== RENDER HERO PILLS =============== */
@@ -1021,7 +1047,25 @@ function renderTrends(){
       },
       plugins:{
         legend:{position:'top',align:'end',labels:{boxWidth:14,padding:12,font:{size:10,weight:'600'}}},
-        tooltip:{backgroundColor:'#0A0A0B',titleFont:{size:11},bodyFont:{size:11},padding:10,cornerRadius:3}
+        tooltip:{
+          backgroundColor:'#0A0A0B',titleFont:{size:11},bodyFont:{size:11},padding:10,cornerRadius:3,
+          callbacks:{
+            title:(items)=>{
+              const t = TRENDS[items[0].dataIndex];
+              if(!t) return '';
+              return `${t.label}${t.danger?' ⚠':''}`;
+            },
+            label:(item)=>{
+              if(item.datasetIndex===0) return `Scor mediu echipă: ${item.parsed.y.toFixed(1)} / 100`;
+              return `Pierderi /90: ${item.parsed.y.toFixed(2)}`;
+            },
+            afterBody:(items)=>{
+              const t = TRENDS[items[0].dataIndex];
+              if(!t) return '';
+              return t.danger ? '⚠ Meci marcat ca risc — pierderi peste medie' : '';
+            }
+          }
+        }
       }
     },
     plugins:[dangerBg]
@@ -1047,12 +1091,12 @@ function makeStackedList(data, container){
       <span class="rank">${String(i+1).padStart(2,'0')}</span>
       <div>
         <div style="display:flex;align-items:center;gap:8px">${avatarHtml(nm, ini, 22)}<span class="name">${nm}</span><span class="pos">${abbrPos(p.position || p.pos)}</span></div>
-        <div class="bar-track has-risk">
-          <span class="seg" style="width:${att*scale}%;background:${SEG[0]}"></span>
-          <span class="seg" style="width:${prog*scale}%;background:${SEG[1]}"></span>
-          <span class="seg" style="width:${pass*scale}%;background:${SEG[2]}"></span>
-          <span class="seg" style="width:${def*scale}%;background:${SEG[3]}"></span>
-          <span class="seg" style="width:${riskPct}%;background:${SEG[4]};margin-left:2px;transform:translateY(-1px);height:12px;border-radius:1px"></span>
+        <div class="bar-track has-risk" title="Atac: ${att.toFixed(1)} · Progresie: ${prog.toFixed(1)} · Pase: ${pass.toFixed(1)} · Apărare: ${def.toFixed(1)} · Risc: ${risk.toFixed(1)}">
+          <span class="seg" style="width:${att*scale}%;background:${SEG[0]}" title="Atac: ${att.toFixed(1)}"></span>
+          <span class="seg" style="width:${prog*scale}%;background:${SEG[1]}" title="Progresie: ${prog.toFixed(1)}"></span>
+          <span class="seg" style="width:${pass*scale}%;background:${SEG[2]}" title="Pase: ${pass.toFixed(1)}"></span>
+          <span class="seg" style="width:${def*scale}%;background:${SEG[3]}" title="Apărare: ${def.toFixed(1)}"></span>
+          <span class="seg" style="width:${riskPct}%;background:${SEG[4]};margin-left:2px;transform:translateY(-1px);height:12px;border-radius:1px" title="Risc: ${risk.toFixed(1)} (negativ scade scorul)"></span>
         </div>
       </div>
       <span class="score-chip ${chipCls} num">${score.toFixed(1)}</span>
@@ -1211,15 +1255,15 @@ function renderLineBreaks(){
     data:{
       labels:LINE_BREAKS.map(p=>p.name),
       datasets:[
-        {label:'Prog. runs',data:LINE_BREAKS.map(p=>p.prog),backgroundColor:SEG[0],stack:'s'},
-        {label:'Through',data:LINE_BREAKS.map(p=>p.through),backgroundColor:SEG[1],stack:'s'},
-        {label:'Final 3rd',data:LINE_BREAKS.map(p=>p.final3),backgroundColor:SEG[2],stack:'s'},
-        {label:'Smart',data:LINE_BREAKS.map(p=>p.smart),backgroundColor:SEG[4],stack:'s'},
+        {label:'Curse progresive',data:LINE_BREAKS.map(p=>p.prog),backgroundColor:COMPONENT_COLORS.prog,stack:'s'},
+        {label:'Pase prin linii',data:LINE_BREAKS.map(p=>p.through),backgroundColor:COMPONENT_COLORS.pass,stack:'s'},
+        {label:'Final 3rd',data:LINE_BREAKS.map(p=>p.final3),backgroundColor:'#0EA5E9',stack:'s'},
+        {label:'Pase smart',data:LINE_BREAKS.map(p=>p.smart),backgroundColor:'#7C3AED',stack:'s'},
       ]
     },
     options:{
       indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      scales:{x:{stacked:true,grid:{color:'#F4F3EE'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
+      scales:{x:{stacked:true,grid:{color:'#F4F3EE'},title:{display:true,text:'Acțiuni totale (cumul)'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
       plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,padding:10,font:{size:10}}}}
     }
   });
@@ -2224,7 +2268,7 @@ async function initPlayersTab(){
   try {
     const list = await apiGet('/players/');
     sel.innerHTML = list.map(p =>
-      `<option value="${p.wy_id}">${p.name} · ${(p.position||'').toUpperCase()} · ${p.matches}m · score ${p.score}${p.in_current_squad?'':' · ⚠ plecat'}</option>`
+      `<option value="${p.wy_id}">${p.name} · ${(p.position||'').toUpperCase()} · ${p.matches} meciuri · scor ${p.score}${p.in_current_squad?'':' · ⚠ plecat'}</option>`
     ).join('');
     sel.addEventListener('change', () => loadPlayerDetail(+sel.value));
     if (list.length) await loadPlayerDetail(+sel.value);
@@ -2280,62 +2324,116 @@ function renderPlayerHeader(d){
 function renderPlayerScoreLine(d){
   const ctx = document.getElementById('playerScoreLine');
   if(charts.playerScoreLine) charts.playerScoreLine.destroy();
-  const labels = d.per_match.map(m => `${m.home?'vs':'@'} ${(m.opponent||'').substring(0,10)}`);
-  const scores = d.per_match.map(m => m.score);
+  const matches = d.per_match;
+  const labels = matches.map(m => `${m.home?'vs':'@'} ${(m.opponent||'').substring(0,10)}`);
+  const scores = matches.map(m => m.score);
   const avg = d.score.season_avg;
+  // Color points by result
+  const pointColors = matches.map(m => m.result==='W'?'#1E7A3A':m.result==='D'?'#B8860B':m.result==='L'?'#B42318':'#9A9A9F');
   charts.playerScoreLine = new Chart(ctx, {
     type:'line',
     data:{
       labels,
       datasets:[
-        {label:'Score', data:scores, borderColor:'#0A0A0B', backgroundColor:'rgba(10,10,11,0.08)', tension:0.3, pointRadius:3, fill:true},
-        {label:`Media sezon (${avg})`, data:scores.map(()=>avg), borderColor:'#9A9A9F', borderDash:[6,4], pointRadius:0},
+        {label:'Score / meci', data:scores, borderColor:'#0A0A0B', backgroundColor:'rgba(10,10,11,0.08)', tension:0.3, pointRadius:5, pointBackgroundColor:pointColors, pointBorderColor:'#fff', pointBorderWidth:1.5, fill:true},
+        {label:`Media sezon (${avg})`, data:scores.map(()=>avg), borderColor:'#9A9A9F', borderDash:[6,4], pointRadius:0, fill:false},
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      scales:{x:{ticks:{maxRotation:60,minRotation:60,font:{size:9}}}, y:{title:{display:true,text:'Score'}}},
-      plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{
+        x:{ticks:{maxRotation:60,minRotation:60,font:{size:9}}, grid:{display:false}},
+        y:{title:{display:true,text:'Player score (0–100)'}, suggestedMin:30, suggestedMax:100}
+      },
+      plugins:{
+        legend:{position:'top',align:'end',labels:{boxWidth:12,font:{size:11}}},
+        tooltip:{
+          callbacks:{
+            title:(items)=>{
+              const m = matches[items[0].dataIndex];
+              if(!m) return '';
+              return `${m.home?'vs':'@'} ${m.opponent} · ${m.score_match} ${m.result}`;
+            },
+            label:(item)=>{
+              const m = matches[item.dataIndex];
+              if(item.datasetIndex===0){
+                return [
+                  `Score: ${item.parsed.y.toFixed(1)}`,
+                  `Min: ${m.minutes}'`,
+                  `G/A: ${m.goals||0}/${m.assists||0}`,
+                  `xG: ${m.xg}`,
+                  `Pierderi: ${m.losses} (${m.dangerous_losses} periculoase)`,
+                ];
+              }
+              return null;
+            }
+          }
+        }
+      },
     }
   });
 }
 
 function renderPlayerBreakdownBar(d){
-  const ctx = document.getElementById('playerBreakdownBar');
-  if(charts.playerBreakdown) charts.playerBreakdown.destroy();
+  const el = document.getElementById('playerBreakdownTiles');
+  if(!el) return;
   const b = d.score.breakdown_avg;
-  charts.playerBreakdown = new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:['Atac','Progresie','Pase','Apărare','Risc'],
-      datasets:[{
-        data:[b.att, b.prog, b.pass, b.def, b.risk],
-        backgroundColor:['#0A0A0B','#27272A','#52525B','#3F3F46','#B42318'],
-      }]
-    },
-    options:{
-      indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      scales:{x:{grid:{color:'#F4F3EE'}},y:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.x.toFixed(1)}`}}}
-    }
-  });
+  const components = [
+    { key:'att',  label:'Atac',      val:b.att,  color:COMPONENT_COLORS.att,  hint:'Goluri, asisturi, xG, pase cheie, atingeri în careu' },
+    { key:'prog', label:'Progresie', val:b.prog, color:COMPONENT_COLORS.prog, hint:'Pase progresive, pase în ultimul third, curse cu mingea, accelerări, dribbling-uri' },
+    { key:'pass', label:'Pase',      val:b.pass, color:COMPONENT_COLORS.pass, hint:'Pase reușite, pase înainte; pase ratate scad scorul' },
+    { key:'def',  label:'Apărare',   val:b.def,  color:COMPONENT_COLORS.def,  hint:'Intercepții, aluneări, degajări, recuperări, dueluri câștigate' },
+    { key:'risk', label:'Risc',      val:b.risk, color:COMPONENT_COLORS.risk, hint:'Pierderi periculoase în propria jumătate (negativ)' },
+  ];
+  // Find max abs for relative scaling
+  const maxAbs = Math.max(...components.map(c => Math.abs(c.val)), 1);
+  el.innerHTML = components.map(c => {
+    const pct = Math.min(100, Math.abs(c.val) / maxAbs * 100);
+    const valDisplay = (c.val >= 0 ? '+' : '') + c.val.toFixed(1);
+    const isNegative = c.val < 0;
+    return `
+    <div title="${c.hint}" style="background:#FAFAF7;border:1px solid var(--rule);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;cursor:help">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;background:${c.color};border-radius:50%;display:inline-block"></span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600">${c.label}</span>
+      </div>
+      <div style="font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;color:${isNegative?'#B42318':'var(--ink)'}">${valDisplay}</div>
+      <div style="background:#E7E5DF;height:4px;border-radius:2px;overflow:hidden">
+        <div style="background:${c.color};height:100%;width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderPlayerLossDonut(d){
   const ctx = document.getElementById('playerLossDonut');
   if(charts.playerLoss) charts.playerLoss.destroy();
   const z = d.ball_loss.zones_proxy;
+  const total = z.own_def_third + z.own_mid + z.opp_half;
   charts.playerLoss = new Chart(ctx,{
     type:'doughnut',
     data:{
-      labels:['Treime defensivă (periculoase)','Mijloc (own half)','Jumătatea adversă'],
+      labels:['Periculoase (treime defensivă)','Propria jumătate (mijloc)','Jumătatea adversă'],
       datasets:[{
         data:[z.own_def_third, z.own_mid, z.opp_half],
         backgroundColor:['#B42318','#B8860B','#9A9A9F'],
         borderWidth:2,borderColor:'#fff',
       }]
     },
-    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label:(c)=>{
+              const pct = total ? Math.round(c.parsed*100/total) : 0;
+              return `${c.label}: ${c.parsed} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
   });
   document.getElementById('player-loss-danger').textContent = d.ball_loss.dangerous;
 }
@@ -2357,19 +2455,34 @@ function renderPlayerLineBreakBar(d){
   const ctx = document.getElementById('playerLineBreakBar');
   if(charts.playerLineBreak) charts.playerLineBreak.destroy();
   const lb = d.line_breaks;
+  const tooltips = [
+    'Curse cu mingea care progresează spre poarta adversă (5m+)',
+    'Pase reușite printre liniile defensive ale adversarului',
+    'Pase reușite în treimea adversă',
+    'Pase creative care sparg liniile (pase smart)',
+  ];
   charts.playerLineBreak = new Chart(ctx,{
     type:'bar',
     data:{
-      labels:['Prog runs','Through','Final 3rd','Smart'],
+      labels:['Curse progresive','Pase prin linii','Pase final 3rd','Pase smart'],
       datasets:[{
         data:[lb.prog_run, lb.through_passes, lb.final_third_passes, lb.smart_passes],
-        backgroundColor:['#0A0A0B','#27272A','#52525B','#9A9A9F'],
+        backgroundColor:[COMPONENT_COLORS.prog, COMPONENT_COLORS.pass, '#0EA5E9', '#7C3AED'],
+        borderRadius:3,
       }]
     },
     options:{
       indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      scales:{x:{grid:{color:'#F4F3EE'}},y:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
-      plugins:{legend:{display:false}}
+      scales:{x:{grid:{color:'#F4F3EE'}, title:{display:true, text:'Acțiuni totale în sezon'}},y:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label:(c)=>`${c.parsed.x} acțiuni`,
+            afterLabel:(c)=>tooltips[c.dataIndex],
+          }
+        }
+      }
     }
   });
 }
@@ -2391,16 +2504,28 @@ function renderPlayerAttackRadar(d){
   const teamPerPlayer = {
     wide: t.wide / 14, central: t.central / 14, direct: t.direct / 14, set_piece: t.set_piece / 14
   };
+  const labels = ['Wide (centrări)','Central (through/smart)','Direct (long)','Set piece (corner/FK)'];
   charts.playerAttack = new Chart(ctx,{
     type:'radar',
     data:{
-      labels:['Wide (centrări)','Central (through/smart)','Direct (long)','Set piece'],
+      labels,
       datasets:[
-        {label:'Jucător', data:[a.wide,a.central,a.direct,a.set_piece], backgroundColor:'rgba(10,10,11,0.20)', borderColor:'#0A0A0B', pointBackgroundColor:'#0A0A0B'},
-        {label:'Media echipă', data:[teamPerPlayer.wide,teamPerPlayer.central,teamPerPlayer.direct,teamPerPlayer.set_piece], backgroundColor:'rgba(154,154,159,0.10)', borderColor:'#9A9A9F', borderDash:[5,5], pointBackgroundColor:'#9A9A9F'},
+        {label:'Acest jucător', data:[a.wide,a.central,a.direct,a.set_piece], backgroundColor:'rgba(214,73,51,0.20)', borderColor:'#D64933', pointBackgroundColor:'#D64933', pointRadius:4, borderWidth:2},
+        {label:'Media echipă', data:[teamPerPlayer.wide,teamPerPlayer.central,teamPerPlayer.direct,teamPerPlayer.set_piece], backgroundColor:'rgba(154,154,159,0.10)', borderColor:'#9A9A9F', borderDash:[5,5], pointBackgroundColor:'#9A9A9F', pointRadius:3},
       ]
     },
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,font:{size:10}}}}}
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{ticks:{font:{size:9}}, pointLabels:{font:{size:11,weight:'600'}}}},
+      plugins:{
+        legend:{position:'top',align:'end',labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{
+          callbacks:{
+            label:(c)=>`${c.dataset.label}: ${c.parsed.r.toFixed(1)}`,
+          }
+        }
+      }
+    }
   });
 }
 
