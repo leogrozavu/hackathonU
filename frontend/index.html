@@ -38,7 +38,10 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
 /* ============ HEADER ============ */
 .topbar{background:var(--ink);color:var(--paper);padding:14px 28px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:40;border-bottom:1px solid #000}
 .topbar.variant-light{background:var(--paper);color:var(--ink);border-bottom:1px solid var(--rule)}
-.crest{width:28px;height:32px;flex-shrink:0}
+.crest{width:40px;height:40px;flex-shrink:0;object-fit:contain}
+.brand-stripe{height:6px;width:100%;background:repeating-linear-gradient(90deg,#000 0,#000 24px,#fff 24px,#fff 36px,#000 36px,#000 48px);position:sticky;top:0;z-index:50}
+.footer-band{background:#000;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:32px;font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+.footer-band .crest-mini{width:28px;height:28px;filter:invert(1)}
 .wordmark{display:flex;flex-direction:column;line-height:1}
 .wordmark .w1{font-size:.68rem;letter-spacing:.18em;font-weight:600;opacity:.65}
 .wordmark .w2{font-size:.98rem;font-weight:800;letter-spacing:.04em;margin-top:2px}
@@ -153,7 +156,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
 
 /* ============ AI CARD ============ */
 .ai-card{background:linear-gradient(135deg,#FAFAF7 0%,#F4F3EE 100%);border:1px solid var(--rule);border-radius:4px;padding:22px;position:relative;overflow:hidden}
-.ai-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--ink) 0%,var(--ink) 30%,var(--accent) 30%,var(--accent) 45%,var(--ink) 45%)}
+.ai-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:3px;background:repeating-linear-gradient(90deg,var(--ink) 0,var(--ink) 14px,#fff 14px,#fff 22px)}
 .ai-headline{font-family:'Fraunces',serif;font-weight:700;font-size:1.35rem;line-height:1.2;letter-spacing:-.01em;margin:10px 0 14px 0}
 .ai-moments{list-style:none;padding:0;margin:0 0 16px 0;display:flex;flex-direction:column;gap:6px}
 .ai-moments li{display:grid;grid-template-columns:44px 1fr;gap:12px;font-size:.88rem;padding:6px 0;border-top:1px solid var(--rule)}
@@ -294,7 +297,7 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
 .pitch-toggle button .swatch.risk{background:var(--loss)}
 .pitch-toggle button .swatch.xg{background:#22D3EE}
 .pitch-toggle button.active{background:#fff;color:#000}
-.pitch-tooltip{position:absolute;pointer-events:none;background:rgba(10,10,11,.94);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:10px 12px;color:#fff;font-family:'Manrope',sans-serif;font-size:.78rem;min-width:180px;max-width:240px;z-index:10;opacity:0;transition:opacity .12s ease;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+.pitch-tooltip{position:absolute;pointer-events:auto;background:rgba(10,10,11,.94);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:10px 12px;color:#fff;font-family:'Manrope',sans-serif;font-size:.78rem;min-width:180px;max-width:240px;z-index:10;opacity:0;transition:opacity .12s ease;box-shadow:0 12px 32px rgba(0,0,0,.4)}
 .pitch-tooltip.show{opacity:1}
 .pitch-tooltip.below{transform:translate(-50%,16px)}
 .pitch-tooltip.above{transform:translate(-50%,-100%) translateY(-16px)}
@@ -320,11 +323,9 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
 <body>
 
 <!-- ============ TOP BAR ============ -->
-<div class="topbar" id="topbar">
-  <svg class="crest" viewBox="0 0 28 32" fill="none" aria-hidden="true">
-    <path d="M1 1 H27 V20 C27 26.6 21.2 31 14 31 C6.8 31 1 26.6 1 20 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-    <text x="14" y="20" text-anchor="middle" font-family="Fraunces,serif" font-size="15" font-weight="900" fill="#000" style="letter-spacing:-1px">U</text>
-  </svg>
+<div class="topbar variant-light" id="topbar">
+  <img class="crest" src="logo-cluj.png" alt="FC Universitatea Cluj" />
+
   <div class="wordmark">
     <span class="w1">FC UNIVERSITATEA CLUJ · EST. 1919</span>
     <span class="w2">MATCH INSIGHTS</span>
@@ -512,7 +513,10 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     </div>
   </div>
 
-  <div class="footer-credit">FC UNIVERSITATEA CLUJ · MATCH INSIGHTS · INTERNAL USE ONLY</div>
+  <div class="footer-band">
+    <span style="display:flex;align-items:center;gap:10px"><img class="crest crest-mini" src="logo-cluj.png" alt=""/>FC UNIVERSITATEA CLUJ · 1919</span>
+    <span style="opacity:.7">MATCH INSIGHTS · INTERNAL USE ONLY · SEZON 2025/26</span>
+  </div>
 
 </div>
 
@@ -684,7 +688,10 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     </table>
   </div>
 
-  <div class="footer-credit">FC UNIVERSITATEA CLUJ · MATCH INSIGHTS · INTERNAL USE ONLY</div>
+  <div class="footer-band">
+    <span style="display:flex;align-items:center;gap:10px"><img class="crest crest-mini" src="logo-cluj.png" alt=""/>FC UNIVERSITATEA CLUJ · 1919</span>
+    <span style="opacity:.7">MATCH INSIGHTS · INTERNAL USE ONLY · SEZON 2025/26</span>
+  </div>
 
 </div>
 
@@ -821,7 +828,10 @@ abbr[title]:hover{border-bottom-color:var(--accent)}
     </div>
   </div>
 
-  <div class="footer-credit">FC UNIVERSITATEA CLUJ · MATCH INSIGHTS · INTERNAL USE ONLY</div>
+  <div class="footer-band">
+    <span style="display:flex;align-items:center;gap:10px"><img class="crest crest-mini" src="logo-cluj.png" alt=""/>FC UNIVERSITATEA CLUJ · 1919</span>
+    <span style="opacity:.7">MATCH INSIGHTS · INTERNAL USE ONLY · SEZON 2025/26</span>
+  </div>
 </div>
 
 <!-- ============ CHAT ============ -->
@@ -1946,7 +1956,7 @@ const _pitch = {
   playerGroups:[], pickables:[], hovered:null, selected:null,
   raycaster:null, mouse:null,
   spherical:{r:78, phi:Math.PI/3.6, theta:Math.PI},
-  target:(window.THREE ? new THREE.Vector3(0,0,4) : null),
+  target:(window.THREE ? new THREE.Vector3(0,0,0) : null),
   dragging:false, lastX:0, lastY:0,
   rafId:null, dirty:true
 };
@@ -1956,10 +1966,10 @@ function pitchRingColor(pl, mode){
   return pl.score>=75 ? 0x1E7A3A : pl.score>=60 ? 0xB8860B : 0xB42318;
 }
 const PITCH_CAM_PRESETS = {
-  broadcast: {r:78, phi:Math.PI/3.6, theta:Math.PI},
-  iso:       {r:90, phi:Math.PI/3.2, theta:Math.PI*1.18},
-  top:       {r:90, phi:0.05,         theta:Math.PI},
-  side:      {r:80, phi:Math.PI/2.2,  theta:Math.PI*1.5},
+  broadcast: {r:95, phi:Math.PI/3.6, theta:Math.PI},
+  iso:       {r:105, phi:Math.PI/3.2, theta:Math.PI*1.18},
+  top:       {r:120, phi:0.05,         theta:Math.PI},
+  side:      {r:90, phi:Math.PI/2.2,  theta:Math.PI*1.5},
 };
 function pitchUpdateCamera(){
   if(!_pitch.camera) return;
@@ -2193,7 +2203,12 @@ function renderPitch3D(){
   animate();
 }
 function pitchSetHover(grp, mx, my){
-  if(_pitch.hovered === grp) return;
+  if(_pitch.hovered === grp) {
+    // re-entering same hover; cancel pending hide
+    if(_pitch._hideTimer){ clearTimeout(_pitch._hideTimer); _pitch._hideTimer = null; }
+    return;
+  }
+  if(_pitch._hideTimer){ clearTimeout(_pitch._hideTimer); _pitch._hideTimer = null; }
   if(_pitch.hovered && _pitch.hovered !== _pitch.selected){
     _pitch.hovered.userData.body.material.emissive = new THREE.Color(0x000000);
   }
@@ -2203,8 +2218,12 @@ function pitchSetHover(grp, mx, my){
     pitchShowTooltip(grp.userData.player, mx, my);
     _pitch.container.style.cursor = 'pointer';
   } else {
-    pitchHideTooltip();
-    _pitch.container.style.cursor = '';
+    // grace period — allow cursor to travel to tooltip without it disappearing
+    _pitch._hideTimer = setTimeout(() => {
+      pitchHideTooltip();
+      if(_pitch.container) _pitch.container.style.cursor = '';
+      _pitch._hideTimer = null;
+    }, 400);
   }
   _pitch.dirty = true;
 }
@@ -2254,6 +2273,24 @@ function pitchHideTooltip(){
   const tt = document.getElementById('pitch-tooltip');
   if(tt) tt.classList.remove('show');
 }
+// Tooltip hover handlers (set once)
+(function setupTooltipHover(){
+  const tt = document.getElementById('pitch-tooltip');
+  if(!tt || tt.dataset._hoverInit) return;
+  tt.dataset._hoverInit = '1';
+  tt.addEventListener('mouseenter', () => {
+    if(_pitch._hideTimer){ clearTimeout(_pitch._hideTimer); _pitch._hideTimer = null; }
+  });
+  tt.addEventListener('mouseleave', () => {
+    pitchHideTooltip();
+    if(_pitch.hovered && _pitch.hovered !== _pitch.selected){
+      _pitch.hovered.userData.body.material.emissive = new THREE.Color(0x000000);
+    }
+    _pitch.hovered = null;
+    if(_pitch.container) _pitch.container.style.cursor = '';
+    _pitch.dirty = true;
+  });
+})();
 function pitchApplyCamPreset(name, instant){
   const p = PITCH_CAM_PRESETS[name]; if(!p) return;
   _pitch.cam = name;
@@ -2575,6 +2612,18 @@ async function initPlayersTab(){
 
 async function loadPlayerDetail(wyId){
   document.getElementById('player-ai-body').innerHTML = `<div style="color:var(--muted);padding:24px;text-align:center;font-size:.9rem">Apasă <strong>Generate</strong> pentru analiză tactică narativă pe baza datelor reale.</div>`;
+  // Curăță explicațiile ✨ AI EXPLICĂ rămase de la jucătorul anterior
+  document.querySelectorAll('#tab-players [data-insight-attached="1"]').forEach(btn => {
+    const body = btn.nextElementSibling;
+    if (body && body.style && body.style.background) { // pentru body-urile insight
+      body.style.display = 'none';
+      body.innerHTML = '';
+    }
+  });
+  // Curăță doar cheile de cache din Players tab (păstrează Season/Match)
+  for (const k of Array.from(_insightCache.keys())) {
+    if (k.startsWith('player_')) _insightCache.delete(k);
+  }
   try {
     const d = await apiGet(`/players/${wyId}/`).catch(()=>null);
     if (d) {
