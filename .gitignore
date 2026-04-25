@@ -24,5 +24,8 @@ local_settings.py
 .env
 .env.local
 
+# Claude Code metadata
+.claude/
+
 # DB (uncomment if you want SQLite excluded)
 # *.sqlite3
