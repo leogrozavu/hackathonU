@@ -189,7 +189,9 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
 .p-table tbody td{padding:12px 14px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
 .p-table tbody td.num{text-align:right}
 .p-table tbody tr:hover{background:var(--paper-2)}
-.p-table .avatar{width:26px;height:26px;border-radius:50%;background:var(--paper-3);color:var(--ink);display:inline-grid;place-items:center;font-size:.64rem;font-weight:800;margin-right:10px;vertical-align:middle;letter-spacing:.02em}
+.p-table .avatar{width:26px;height:26px;border-radius:50%;background:var(--paper-3);color:var(--ink);display:inline-grid;place-items:center;font-size:.64rem;font-weight:800;margin-right:10px;vertical-align:middle;letter-spacing:.02em;overflow:hidden}
+.avatar{overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
 .p-table .pl-name{font-weight:700}
 .p-table .pl-pos{color:var(--muted);font-size:.72rem;font-weight:500;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.04em;margin-left:6px}
 .p-table tfoot td{padding:12px 14px;font-size:.78rem;color:var(--muted);background:var(--paper-2);font-weight:600;border-top:2px solid var(--ink)}
@@ -818,6 +820,60 @@ function abbrPos(code){
   return `<abbr title="${posLabel(code).replace(/"/g,'&quot;')}">${code}</abbr>`;
 }
 
+/* ====== PLAYER PHOTOS ====== */
+const PLAYER_PHOTOS = {
+  drammeh:    'players/6873957a96676Mouhamadou Drammeh.png',
+  coubis:     'players/696ddae348cbcCOUBIS_ANDREI.png',
+  nistor:     'players/687395052e768Dan Nistor.png',
+  chipciu:    'players/687394df76a2bAlexandru Chipciu.png',
+  cristea:    'players/687395439562cIulian Cristea.png',
+  bic:        'players/6873958aad9e2Ovidiu Bic.png',
+  capradossi: 'players/68739521df6c4Elio Capradossi.png',
+  codrea:     'players/68739512cf3caDorin Codrea.png',
+  lukic:      'players/68739563b766cJovo Lukic.png',
+  chintes:    'players/687394e883706Alin Chintes.png',
+  mendy:      'players/697901153c728MENDY_OUCASSE_N`DAYANTHANE.png',
+  silva:      'players/687395726978dMiguel Silva.png',
+  mikanovic:  'players/68a300827f40fMIKANOVIC_DINO.png',
+  macalou:    'players/6873953c189a7Issouf Macalou.png',
+  cisse:      'players/6873955ac0d7eJonathan Cisse.png',
+  sawy:       'players/68cbf6af79b41EL_SAWY_OMAR_SAYED_MOHAMED_MAHMOUD.png',
+  murgia:     'players/687394d86e650Alessandro Murgia.png',
+  fabry:      'players/687394f4e93d7Andrej Fabry.png',
+  simion:     'players/6873952ae52fdGabriel Simion.png',
+  stanojev:   'players/698aeddfeabb7STANOJEV_JUG.png',
+  gheorghita: 'players/68a6ea7cb6595GHEORGHITA_ANDREI_COSMIN_FC_UNIVERSITATEA_CLUJ.png',
+  postolachi: 'players/68cbf6be709f3POSTOLACHI_VIRGILIU.png',
+  trica:      'players/687394fc307e9Atanas Trica.png',
+  gertmonas:  'players/687395196cdd2Edvinas Gertmonas.png',
+  lefter:     'players/6873959cad5c9Stefan Lefter.png',
+  cosa:       'players/687395a2dbcc5Tudor Cosa.png',
+  moraru:     'players/669a3e4827823Matei Moraru 01.png',
+  orban:      'players/68e500b33922cORBAN_ALEX_MIHA.png',
+};
+
+function playerPhoto(name){
+  if(!name) return null;
+  // strip period prefix like "M. " then take last word, normalize
+  const parts = String(name).split(/[\s.]+/).filter(Boolean);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const key = parts[i].toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z]/g,'');
+    if (PLAYER_PHOTOS[key]) return PLAYER_PHOTOS[key];
+  }
+  return null;
+}
+
+function avatarHtml(name, initials, size){
+  const url = playerPhoto(name);
+  const sz = size || 26;
+  if(url){
+    return `<span class="avatar" style="${size?`width:${sz}px;height:${sz}px;`:''}"><img src="${url}" alt="${name}" loading="lazy" onerror="this.parentNode.textContent='${(initials||'').replace(/'/g,'')}'"></span>`;
+  }
+  return `<span class="avatar" style="${size?`width:${sz}px;height:${sz}px;font-size:${Math.round(sz*0.36)}px;`:''}">${initials||'?'}</span>`;
+}
+
 const FALLBACK = {
   top10: [
     {name:'M. Drammeh',pos:'RCMF',matches:17,min:1471,score:72.4,goals:5,assists:0,xg:2.74,bk:{att:28,prog:18,pass:14,def:9,risk:-3}},
@@ -984,11 +1040,13 @@ function makeStackedList(data, container){
     const scale = posPct/posSum;
     const score = p.score;
     const chipCls = score>=75?'good':score>=65?'':score>=50?'warn':'bad';
+    const nm = p.player_name || p.name;
+    const ini = (nm||'').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
     return `
     <div class="stack-row">
       <span class="rank">${String(i+1).padStart(2,'0')}</span>
       <div>
-        <div><span class="name">${p.player_name || p.name}</span><span class="pos">${abbrPos(p.position || p.pos)}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">${avatarHtml(nm, ini, 22)}<span class="name">${nm}</span><span class="pos">${abbrPos(p.position || p.pos)}</span></div>
         <div class="bar-track has-risk">
           <span class="seg" style="width:${att*scale}%;background:${SEG[0]}"></span>
           <span class="seg" style="width:${prog*scale}%;background:${SEG[1]}"></span>
@@ -1039,10 +1097,11 @@ function renderSeasonLosers(){
     const oppPct=(l.oppHalf/total)*100;
     const dangPct=(l.dangerous/total)*100;
     const widthPct = (total/max)*100;
+    const ini = (l.name||'').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
     return `<div class="loser-row">
       <span class="rank">${String(i+1).padStart(2,'0')}</span>
       <div>
-        <div class="top"><span class="name">${l.name}</span><span class="per90 num">${l.per90} / 90</span></div>
+        <div class="top" style="display:flex;align-items:center;gap:8px">${avatarHtml(l.name, ini, 22)}<span class="name">${l.name}</span><span class="per90 num" style="margin-left:auto">${l.per90} / 90</span></div>
         <div class="track" style="width:${widthPct}%">
           <span class="seg" style="width:${safePct}%;background:${CHART_COLORS.warn}"></span>
           <span class="seg" style="width:${oppPct}%;background:${CHART_COLORS.g400}"></span>
@@ -1130,10 +1189,11 @@ function renderMatchLosers(){
   el.innerHTML=MATCH_LOSERS.map((l,i)=>{
     const dangPct=(l.dangerous/l.total)*100;
     const safePct=100-dangPct;
+    const ini = (l.name||'').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
     return `<div class="loser-row">
       <span class="rank">${String(i+1).padStart(2,'0')}</span>
       <div>
-        <div class="top"><span class="name">${l.name}</span><span class="per90 num">${l.dangerous} 🚨</span></div>
+        <div class="top" style="display:flex;align-items:center;gap:8px">${avatarHtml(l.name, ini, 22)}<span class="name">${l.name}</span><span class="per90 num" style="margin-left:auto">${l.dangerous} 🚨</span></div>
         <div class="track" style="width:${(l.total/max)*100}%">
           <span class="seg" style="width:${safePct}%;background:${CHART_COLORS.g400}"></span>
           <span class="seg" style="width:${dangPct}%;background:${CHART_COLORS.loss}"></span>
@@ -1177,7 +1237,7 @@ function renderPlayersTable(){
     const chip=p.score>=75?'good':p.score>=60?'':p.score>=45?'warn':'bad';
     const initials=p.player_name.split(' ').map(w=>w[0]).join('').substring(0,2);
     return `<tr>
-      <td><span class="avatar">${initials}</span><span class="pl-name">${p.player_name}</span><span class="pl-pos">${abbrPos(p.position)}</span></td>
+      <td>${avatarHtml(p.player_name, initials)}<span class="pl-name">${p.player_name}</span><span class="pl-pos">${abbrPos(p.position)}</span></td>
       <td>${abbrPos(p.position)}</td>
       <td class="num">${p.minutes}</td>
       <td class="num"><span class="score-chip sm ${chip}">${p.score.toFixed(1)}</span></td>
@@ -1869,23 +1929,34 @@ function renderPitch3D(){
 
     const name = pl.player_name || pl.name || '—';
     const initials = name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
-    const sc = document.createElement('canvas');
-    sc.width=128; sc.height=64;
-    const sx = sc.getContext('2d');
-    sx.fillStyle='rgba(10,10,11,0.88)';
-    sx.font='bold 36px Manrope, sans-serif';
-    const tw = sx.measureText(initials).width;
-    const padX=10, bw=tw+padX*2, bh=44, bx=(128-bw)/2, by=(64-bh)/2, rr=6;
-    sx.beginPath();
-    sx.moveTo(bx+rr,by); sx.lineTo(bx+bw-rr,by); sx.quadraticCurveTo(bx+bw,by,bx+bw,by+rr);
-    sx.lineTo(bx+bw,by+bh-rr); sx.quadraticCurveTo(bx+bw,by+bh,bx+bw-rr,by+bh);
-    sx.lineTo(bx+rr,by+bh); sx.quadraticCurveTo(bx,by+bh,bx,by+bh-rr);
-    sx.lineTo(bx,by+rr); sx.quadraticCurveTo(bx,by,bx+rr,by); sx.closePath(); sx.fill();
-    sx.fillStyle='#fff'; sx.textAlign='center'; sx.textBaseline='middle';
-    sx.fillText(initials,64,33);
-    const tex = new THREE.CanvasTexture(sc); tex.minFilter=THREE.LinearFilter;
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
-    sprite.scale.set(4,2,1); sprite.position.y=cylH+headR*2+1.5; grp.add(sprite);
+    const photoUrl = playerPhoto(name);
+    let sprite;
+    if (photoUrl) {
+      const tex = new THREE.TextureLoader().load(photoUrl, () => { _pitch.dirty = true; });
+      tex.minFilter = THREE.LinearFilter;
+      sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+      sprite.scale.set(2.6, 3.2, 1);
+      sprite.position.y = cylH + headR*2 + 2.0;
+    } else {
+      const sc = document.createElement('canvas');
+      sc.width=128; sc.height=64;
+      const sx = sc.getContext('2d');
+      sx.fillStyle='rgba(10,10,11,0.88)';
+      sx.font='bold 36px Manrope, sans-serif';
+      const tw = sx.measureText(initials).width;
+      const padX=10, bw=tw+padX*2, bh=44, bx=(128-bw)/2, by=(64-bh)/2, rr=6;
+      sx.beginPath();
+      sx.moveTo(bx+rr,by); sx.lineTo(bx+bw-rr,by); sx.quadraticCurveTo(bx+bw,by,bx+bw,by+rr);
+      sx.lineTo(bx+bw,by+bh-rr); sx.quadraticCurveTo(bx+bw,by+bh,bx+bw-rr,by+bh);
+      sx.lineTo(bx+rr,by+bh); sx.quadraticCurveTo(bx,by+bh,bx,by+bh-rr);
+      sx.lineTo(bx,by+rr); sx.quadraticCurveTo(bx,by,bx+rr,by); sx.closePath(); sx.fill();
+      sx.fillStyle='#fff'; sx.textAlign='center'; sx.textBaseline='middle';
+      sx.fillText(initials,64,33);
+      const tex = new THREE.CanvasTexture(sc); tex.minFilter=THREE.LinearFilter;
+      sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+      sprite.scale.set(4,2,1); sprite.position.y=cylH+headR*2+1.5;
+    }
+    grp.add(sprite);
 
     grp.userData = { player: pl, ring, body, cylH, cylR };
     body.userData.pickGroup = grp;
@@ -2191,7 +2262,7 @@ function renderPlayerHeader(d){
     : '<span style="background:#B8860B;color:#fff;font-size:.65rem;padding:3px 8px;border-radius:3px;letter-spacing:.06em;font-weight:700" title="A jucat pentru Cluj acest sezon, dar nu mai e la club">PLECAT MID-SEZON</span>';
   document.getElementById('player-header').innerHTML = `
     <div style="display:flex;align-items:center;gap:14px">
-      <span class="avatar" style="width:56px;height:56px;font-size:1.1rem">${initials}</span>
+      ${avatarHtml(p.name, initials, 64).replace('font-size:23px','font-size:1.1rem')}
       <div style="display:flex;flex-direction:column;gap:2px">
         <span style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700">${p.name}</span>
         <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted)">${abbrPos(p.position_code)} · ${p.total_matches} meciuri · ${p.total_minutes}'</span>
