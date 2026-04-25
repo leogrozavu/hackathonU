@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <style>
 :root{
   --ink:#0A0A0B;
@@ -262,6 +263,56 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
 @media (max-width:1100px){.grid-2,.grid-60-40,.grid-50{grid-template-columns:1fr}}
 
 .footer-credit{text-align:center;padding:32px 0 12px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted-2);letter-spacing:.12em;text-transform:uppercase}
+
+/* ============ TOOLTIPS ON ABBREVIATIONS ============ */
+abbr[title]{text-decoration:none;border-bottom:1px dotted currentColor;cursor:help;text-decoration-skip-ink:none}
+abbr[title]:hover{border-bottom-color:var(--accent)}
+.pl-pos abbr{border-bottom-color:rgba(255,255,255,.4)}
+.pitch-tooltip abbr{border-bottom-color:rgba(255,255,255,.4)}
+
+/* ============ 3D PITCH ============ */
+.pitch-card{position:relative;background:#0d1014;border:1px solid var(--rule);border-radius:4px;overflow:hidden;height:560px;margin-bottom:24px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.06)}
+.pitch-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;cursor:grab}
+.pitch-canvas:active{cursor:grabbing}
+.pitch-corner-tag{position:absolute;top:14px;left:16px;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:#fff;letter-spacing:.14em;text-transform:uppercase;font-weight:600;display:flex;align-items:center;gap:8px;text-shadow:0 1px 4px rgba(0,0,0,.5);z-index:5}
+.pitch-corner-tag .dot{width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block}
+.pitch-corner-meta{position:absolute;top:14px;right:92px;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:rgba(255,255,255,.7);letter-spacing:.1em;display:flex;gap:12px;z-index:5}
+.pitch-corner-meta .k{color:rgba(255,255,255,.5)}
+.pitch-corner-meta .v{color:#fff;font-weight:700}
+.pitch-legend{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(10,10,11,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:3px;padding:6px 12px;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#fff;letter-spacing:.1em;text-transform:uppercase;z-index:5}
+.pitch-legend .item{display:flex;align-items:center;gap:6px}
+.pitch-legend .item .d{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pitch-legend .item.good .d{background:var(--win)}
+.pitch-legend .item.warn .d{background:var(--draw)}
+.pitch-legend .item.bad .d{background:var(--loss)}
+.pitch-toggle{position:absolute;bottom:14px;left:14px;background:rgba(10,10,11,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:3px;padding:4px;display:flex;gap:2px;z-index:5}
+.pitch-toggle button{background:transparent;border:none;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;font-size:.66rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:2px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.pitch-toggle button .swatch{width:7px;height:7px;border-radius:50%;display:inline-block}
+.pitch-toggle button .swatch.form{background:var(--win)}
+.pitch-toggle button .swatch.risk{background:var(--loss)}
+.pitch-toggle button .swatch.xg{background:#22D3EE}
+.pitch-toggle button.active{background:#fff;color:#000}
+.pitch-tooltip{position:absolute;pointer-events:none;background:rgba(10,10,11,.94);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:10px 12px;color:#fff;font-family:'Manrope',sans-serif;font-size:.78rem;min-width:180px;max-width:240px;z-index:10;opacity:0;transition:opacity .12s ease;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+.pitch-tooltip.show{opacity:1}
+.pitch-tooltip.below{transform:translate(-50%,16px)}
+.pitch-tooltip.above{transform:translate(-50%,-100%) translateY(-16px)}
+.pitch-tooltip.left{transform:translate(-100%,-50%) translateX(-16px)}
+.pitch-tooltip.right{transform:translate(0,-50%) translateX(16px)}
+.pitch-card.fullscreen{position:fixed;inset:0;width:100vw;height:100vh;max-height:none;border-radius:0;border:none;z-index:1000}
+.pitch-card.fullscreen .pitch-canvas{height:100vh}
+.pitch-tooltip .name{font-family:'Fraunces',serif;font-weight:700;font-size:.95rem;letter-spacing:-.01em;line-height:1.1;margin-bottom:2px}
+.pitch-tooltip .pos{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;color:#9A9A9F;text-transform:uppercase;margin-bottom:8px}
+.pitch-tooltip .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.pitch-tooltip .k{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.12em;color:#9A9A9F;text-transform:uppercase}
+.pitch-tooltip .v{font-family:'Fraunces',serif;font-weight:700;font-size:.86rem;color:#fff}
+.pitch-tooltip .v.warn{color:#F59E0B}
+.pitch-tooltip .v.bad{color:#EF4444}
+.pitch-tooltip .v.good{color:#22C55E}
+.pitch-help{position:absolute;bottom:14px;right:14px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;z-index:5;display:flex;gap:14px}
+.pitch-help kbd{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:1px 6px;border-radius:2px;color:rgba(255,255,255,.85);font-size:.58rem;margin-right:4px}
+.pitch-cam-snap{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(10,10,11,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:3px;padding:4px;display:flex;gap:2px;z-index:5}
+.pitch-cam-snap button{background:transparent;border:none;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:6px 10px;border-radius:2px;cursor:pointer}
+.pitch-cam-snap button.active,.pitch-cam-snap button:hover{background:#fff;color:#000}
 </style>
 </head>
 <body>
@@ -299,23 +350,23 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
   <!-- Hero strip -->
   <div class="hero">
     <div>
-      <div class="kicker"><span>01 · RECORD</span><span class="trend" id="tile-record-trend"></span></div>
+      <div class="kicker"><span>01 · <abbr title="Record sezon: Victorii–Egaluri–Înfrângeri">RECORD</abbr></span><span class="trend" id="tile-record-trend"></span></div>
       <div class="big num" id="tile-record">20<span style="color:var(--muted-2);font-weight:700">–</span>6<span style="color:var(--muted-2);font-weight:700">–</span>9</div>
       <div class="sub" id="tile-record-sub">35 meciuri · 66 puncte total</div>
       <div class="record-pills" id="record-pills"></div>
     </div>
     <div>
-      <div class="kicker"><span>02 · GOLURI</span><span class="trend" id="tile-goals-trend">+27</span></div>
+      <div class="kicker"><span>02 · <abbr title="Goluri marcate vs goluri primite în acest sezon">GOLURI</abbr></span><span class="trend" id="tile-goals-trend" title="Diferența golaveraj (marcate − primite)">+27</span></div>
       <div class="big split num" id="tile-goals">58<span class="vs">:</span><span class="minor">31</span></div>
-      <div class="sub">marcate · primite</div>
+      <div class="sub" title="Goluri marcate de Cluj (stânga) vs goluri primite (dreapta)">marcate · primite</div>
     </div>
     <div>
-      <div class="kicker"><span>03 · xG</span><span class="trend" id="tile-xg-trend"></span></div>
+      <div class="kicker"><span>03 · <abbr title="Expected Goals — suma probabilităților ca șuturile echipei să devină goluri (model statistic Wyscout)">xG</abbr></span><span class="trend" id="tile-xg-trend" title="Diferența xG (marcate − primite)"></span></div>
       <div class="big split num">47.7<span class="vs">:</span><span class="minor">41.2</span></div>
-      <div class="sub">expected · concedate</div>
+      <div class="sub" title="xG generat de Cluj (stânga) vs xG concedat (dreapta) — calitatea șanselor create vs primite">expected · concedate</div>
     </div>
     <div>
-      <div class="kicker"><span>04 · PPG</span><span class="trend" id="tile-ppg-trend"></span></div>
+      <div class="kicker"><span>04 · <abbr title="Points Per Game — puncte medii câștigate per meci (3 pentru victorie, 1 pentru egal)">PPG</abbr></span><span class="trend" id="tile-ppg-trend" title="↑ ≥1.5 PPG · → 1.0–1.5 · ↓ &lt;1.0"></span></div>
       <div class="big num">1.89</div>
       <div class="sub">puncte / meci</div>
     </div>
@@ -326,7 +377,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
     <span class="num-tag">§ 01</span>
     <h3>Formă pe parcursul sezonului</h3>
     <span class="rule"></span>
-    <span class="aside">scor mediu jucători · pierderi / 90</span>
+    <span class="aside" title="Pe stânga: scor compus mediu al jucătorilor Cluj per meci (axa neagră). Pe dreapta: pierderi de minge la 90 minute (axa roșie).">scor mediu jucători · pierderi / 90</span>
   </div>
   <div class="card" style="margin-bottom:28px">
     <div class="chart-wrap tall"><canvas id="trendsChart"></canvas></div>
@@ -337,7 +388,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
     <span class="num-tag">§ 02</span>
     <h3>Jucătorii sezonului</h3>
     <span class="rule"></span>
-    <span class="aside">min 300' · breakdown pe componente</span>
+    <span class="aside" title="Doar jucătorii cu cel puțin 300 minute jucate. Bara e împărțită pe 5 componente: atac, progresie, pase, apărare, risc.">min 300' · breakdown pe componente</span>
   </div>
   <div class="grid-60-40" style="margin-bottom:28px">
     <div class="card">
@@ -393,7 +444,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
     <div class="ai-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div style="display:flex;align-items:center;gap:10px">
-          <span class="tag-ai">★ AI</span>
+          <span class="tag-ai" title="Generat de inteligență artificială (Google Gemini) pe baza datelor reale din DB">★ AI</span>
           <h4 style="font-family:'Fraunces',serif">AI Insights · trenduri</h4>
         </div>
         <button class="btn sm" onclick="generateTrends()">
@@ -434,6 +485,52 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
     </div>
   </div>
 
+  <!-- 3D Pitch lineup -->
+  <div class="section-label">
+    <span class="num-tag">§ 02</span>
+    <h3>Lineup 3D — tactical board</h3>
+    <span class="rule"></span>
+    <span class="aside">cilindri = jucători · inele color = formă / risc / xG</span>
+  </div>
+  <div class="pitch-launcher card" id="pitch-launcher" style="text-align:center;padding:48px 24px;margin-bottom:24px;cursor:pointer">
+    <div style="font-family:'Fraunces',serif;font-weight:700;font-size:1.2rem;margin-bottom:6px">Vizualizare 3D a formației</div>
+    <div style="color:var(--muted);font-size:.85rem;margin-bottom:18px">Lineup interactiv — drag pentru a roti, hover pentru detalii. Se randează la cerere (mai greu pe device-uri slabe).</div>
+    <button class="btn primary" onclick="showPitch3D()" style="display:inline-flex;align-items:center;gap:8px">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+      Afișează pitch 3D
+    </button>
+  </div>
+  <div class="pitch-card" id="pitch-card-wrap" style="display:none">
+    <button onclick="togglePitchFullscreen()" title="Toggle fullscreen" id="pitch-fullscreen-btn" style="position:absolute;top:12px;right:50px;z-index:6;background:rgba(10,10,11,.7);border:1px solid rgba(255,255,255,.15);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;display:grid;place-items:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h6M3 3v6M21 3h-6M21 3v6M3 21h6M3 21v-6M21 21h-6M21 21v-6"/></svg>
+    </button>
+    <button onclick="hidePitch3D()" title="Închide pitch 3D" style="position:absolute;top:12px;right:12px;z-index:6;background:rgba(10,10,11,.7);border:1px solid rgba(255,255,255,.15);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:grid;place-items:center">×</button>
+    <span class="pitch-corner-tag"><span class="dot"></span><span id="pitch-formation">4-3-3</span> · vs <span id="pitch-opp">—</span></span>
+    <span class="pitch-corner-meta">
+      <span><span class="k">FOV</span> <span class="v">32°</span></span>
+      <span><span class="k">CAM</span> <span class="v" id="pitch-cam-label">BROADCAST</span></span>
+    </span>
+    <div class="pitch-legend" id="pitch-legend" title="Culoarea inelului = scor compus 0–100. Comută în mode RISK pentru pierderi sau xG pentru calitatea șanselor.">
+      <span class="item good"><span class="d"></span>SCORE ≥ 75</span>
+      <span class="item warn"><span class="d"></span>60–75</span>
+      <span class="item bad"><span class="d"></span>&lt; 60</span>
+    </div>
+    <div class="pitch-canvas" id="pitch3d-canvas"></div>
+    <div class="pitch-tooltip" id="pitch-tooltip"></div>
+    <div class="pitch-toggle">
+      <button class="active" data-mode="form" onclick="setPitchMode('form')" title="FORM — culoarea inelului după scorul compus al jucătorului"><span class="swatch form"></span>FORM</button>
+      <button data-mode="risk" onclick="setPitchMode('risk')" title="RISK — culoarea inelului după pierderile periculoase"><span class="swatch risk"></span>RISK</button>
+      <button data-mode="xg" onclick="setPitchMode('xg')" title="xG — mărimea cilindrului = Expected Goals"><span class="swatch xg"></span>xG</button>
+    </div>
+    <div class="pitch-cam-snap">
+      <button class="active" data-cam="broadcast" onclick="setPitchCam('broadcast')" title="Camera tip transmisie TV — unghi mediu de la lateral">BROADCAST</button>
+      <button data-cam="iso" onclick="setPitchCam('iso')" title="Camera izometrică — vedere cu unghi de 45°">ISO</button>
+      <button data-cam="top" onclick="setPitchCam('top')" title="Vedere de sus — tactică de antrenor">TOP</button>
+      <button data-cam="side" onclick="setPitchCam('side')" title="Vedere laterală — perspectiva tribunei">SIDE</button>
+    </div>
+    <div class="pitch-help"><span><kbd>drag</kbd>rotate</span><span><kbd>scroll</kbd>zoom</span></div>
+  </div>
+
   <!-- Row 1: Scores + Ball losses -->
   <div class="grid-50" style="margin-bottom:24px">
     <div class="card">
@@ -472,7 +569,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
       <div class="meta-row">
         <div>
           <h4>Line-breaking runs</h4>
-          <div class="desc" style="margin-top:4px">Cumul: progressive runs · through passes · final 3rd · smart passes.</div>
+          <div class="desc" style="margin-top:4px" title="Progressive runs = curse înainte cu mingea care depășesc 5m. Through passes = pase printre fundași. Final 3rd = pase reușite în treimea adversă. Smart passes = pase creative care sparg liniile.">Cumul: <abbr title="Curse cu mingea care progresează spre poarta adversă">progressive runs</abbr> · <abbr title="Pase printre fundași spre un coechipier liber">through passes</abbr> · <abbr title="Pase reușite în treimea adversă">final 3rd</abbr> · <abbr title="Pase creative care sparg liniile defensive">smart passes</abbr>.</div>
         </div>
       </div>
       <div class="chart-wrap tall"><canvas id="lineBreaks"></canvas></div>
@@ -487,7 +584,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
   <div class="ai-card" style="margin-bottom:24px" id="ai-report-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div style="display:flex;align-items:center;gap:10px">
-        <span class="tag-ai">★ AI</span>
+        <span class="tag-ai" title="Generat de inteligență artificială (Google Gemini) pe baza datelor reale din DB">★ AI</span>
         <h4 style="font-family:'Fraunces',serif">AI Match Report</h4>
       </div>
       <button class="btn sm primary" onclick="generateReport()">
@@ -513,15 +610,15 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
     <table class="p-table" id="players-table">
       <thead><tr>
         <th data-k="player_name">Jucător</th>
-        <th data-k="position">Poz</th>
-        <th class="num" data-k="minutes">Min</th>
-        <th class="num" data-k="score">Score</th>
-        <th class="num" data-k="goals">G</th>
-        <th class="num" data-k="assists">A</th>
-        <th class="num" data-k="xg">xG</th>
-        <th class="num" data-k="pass_pct">Pass%</th>
-        <th class="num" data-k="duels_pct">Duels%</th>
-        <th class="num" data-k="losses">Pierd.</th>
+        <th data-k="position"><abbr title="Poziție pe teren">Poz</abbr></th>
+        <th class="num" data-k="minutes"><abbr title="Minute jucate în meci">Min</abbr></th>
+        <th class="num" data-k="score"><abbr title="Scor compus 0–100 (atac + progresie + pase + apărare − risc), normalizat la 90 minute">Score</abbr></th>
+        <th class="num" data-k="goals"><abbr title="Goluri marcate în meci">G</abbr></th>
+        <th class="num" data-k="assists"><abbr title="Pase decisive (assists) în meci">A</abbr></th>
+        <th class="num" data-k="xg"><abbr title="Expected Goals — calitatea cumulată a șuturilor jucătorului">xG</abbr></th>
+        <th class="num" data-k="pass_pct"><abbr title="Procent pase reușite din total">Pass%</abbr></th>
+        <th class="num" data-k="duels_pct"><abbr title="Procent dueluri câștigate din total angajate">Duels%</abbr></th>
+        <th class="num" data-k="losses"><abbr title="Pierderi de minge totale (în propria + cealaltă jumătate)">Pierd.</abbr></th>
       </tr></thead>
       <tbody id="players-tbody"></tbody>
       <tfoot><tr><td colspan="10" id="players-footer">Total echipă — 990' · avg score 68.2 · 17 pierderi · xG 2.34</td></tr></tfoot>
@@ -539,7 +636,7 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
 
 <div class="drawer" id="drawer">
   <header>
-    <h4><span class="tag-ai">★ AI</span> AI Analyst</h4>
+    <h4><span class="tag-ai" title="Generat de inteligență artificială (Google Gemini) pe baza datelor reale din DB">★ AI</span> AI Analyst</h4>
     <button class="close" onclick="toggleDrawer()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -589,6 +686,44 @@ html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-fam
 <script>
 /* ================= DATA (fallback, used when API unreachable) ================= */
 const API_BASE = 'http://127.0.0.1:8000/api';
+
+/* ====== ABBREVIATIONS DICTIONARY ====== */
+const POS_LABEL = {
+  GK:'Portar (Goalkeeper)',
+  CB:'Fundaș central (Center Back)',
+  RCB:'Fundaș central dreapta (Right Center Back)',
+  LCB:'Fundaș central stânga (Left Center Back)',
+  RB:'Fundaș dreapta (Right Back)',
+  LB:'Fundaș stânga (Left Back)',
+  RWB:'Fundaș lateral dreapta avansat (Right Wing-Back)',
+  LWB:'Fundaș lateral stânga avansat (Left Wing-Back)',
+  DMF:'Mijlocaș defensiv (Defensive Midfielder)',
+  RDMF:'Mijlocaș defensiv dreapta (Right Defensive Midfielder)',
+  LDMF:'Mijlocaș defensiv stânga (Left Defensive Midfielder)',
+  CMF:'Mijlocaș central (Central Midfielder)',
+  RCMF:'Mijlocaș central dreapta (Right Central Midfielder)',
+  LCMF:'Mijlocaș central stânga (Left Central Midfielder)',
+  AMF:'Mijlocaș ofensiv (Attacking Midfielder)',
+  AM:'Mijlocaș ofensiv (Attacking Midfielder)',
+  RAMF:'Mijlocaș ofensiv dreapta (Right Attacking Midfielder)',
+  LAMF:'Mijlocaș ofensiv stânga (Left Attacking Midfielder)',
+  RW:'Extremă dreapta (Right Winger)',
+  LW:'Extremă stânga (Left Winger)',
+  CF:'Atacant central (Center Forward)',
+  ST:'Atacant (Striker)',
+  FW:'Atacant (Forward)',
+  MD:'Mijlocaș (Midfielder)',
+  DF:'Fundaș (Defender)',
+};
+function posLabel(code){
+  if(!code) return '';
+  const k = String(code).toUpperCase();
+  return POS_LABEL[k] || `Poziție: ${k}`;
+}
+function abbrPos(code){
+  if(!code) return '—';
+  return `<abbr title="${posLabel(code).replace(/"/g,'&quot;')}">${code}</abbr>`;
+}
 
 const FALLBACK = {
   top10: [
@@ -760,7 +895,7 @@ function makeStackedList(data, container){
     <div class="stack-row">
       <span class="rank">${String(i+1).padStart(2,'0')}</span>
       <div>
-        <div><span class="name">${p.player_name || p.name}</span><span class="pos">${p.position || p.pos}</span></div>
+        <div><span class="name">${p.player_name || p.name}</span><span class="pos">${abbrPos(p.position || p.pos)}</span></div>
         <div class="bar-track has-risk">
           <span class="seg" style="width:${att*scale}%;background:${SEG[0]}"></span>
           <span class="seg" style="width:${prog*scale}%;background:${SEG[1]}"></span>
@@ -881,6 +1016,9 @@ function renderMatch(id){
   renderAttackRadar('matchAttackRadar',MATCH_ATTACK,'Meci');
   document.getElementById('m-losses-total').textContent=MATCH_LOSERS.reduce((s,l)=>s+l.total,0)+24;
   document.getElementById('m-danger').textContent=MATCH_LOSERS.reduce((s,l)=>s+l.dangerous,0);
+  pitchUpdateOpponentLabel();
+  // Only re-render 3D if it's already been opened by the user
+  if(typeof renderPitch3D === 'function' && document.getElementById('pitch-card-wrap')?.style.display !== 'none') renderPitch3D();
 }
 
 function renderLossesDonut(){
@@ -946,8 +1084,8 @@ function renderPlayersTable(){
     const chip=p.score>=75?'good':p.score>=60?'':p.score>=45?'warn':'bad';
     const initials=p.player_name.split(' ').map(w=>w[0]).join('').substring(0,2);
     return `<tr>
-      <td><span class="avatar">${initials}</span><span class="pl-name">${p.player_name}</span><span class="pl-pos">${p.position}</span></td>
-      <td>${p.position}</td>
+      <td><span class="avatar">${initials}</span><span class="pl-name">${p.player_name}</span><span class="pl-pos">${abbrPos(p.position)}</span></td>
+      <td>${abbrPos(p.position)}</td>
       <td class="num">${p.minutes}</td>
       <td class="num"><span class="score-chip sm ${chip}">${p.score.toFixed(1)}</span></td>
       <td class="num">${p.goals||'—'}</td>
@@ -974,6 +1112,10 @@ function switchTab(t){
   document.getElementById('tab-match').style.display=t==='match'?'':'none';
   document.getElementById('path-current').textContent = t==='season'?'/ sezon / overview':'/ meci / selectat';
   window.scrollTo({top:0,behavior:'instant'});
+  // Re-render 3D pitch only if it's already been opened by user
+  if(t==='match' && typeof renderPitch3D === 'function' && document.getElementById('pitch-card-wrap')?.style.display !== 'none'){
+    setTimeout(()=>renderPitch3D(), 60);
+  }
 }
 
 /* =============== AI GENERATE (stubs for demo) =============== */
@@ -1255,6 +1397,8 @@ async function hydrateMatch(id){
       scores.map(adaptPlayerScore).forEach(p=>MATCH_PLAYERS.push(p));
       makeStackedList(MATCH_PLAYERS.slice(0,10), document.getElementById('match-top10'));
       renderPlayersTable();
+      pitchUpdateOpponentLabel();
+      if(typeof renderPitch3D === 'function' && document.getElementById('pitch-card-wrap')?.style.display !== 'none') renderPitch3D();
     }
     // Losses
     if(losses){
@@ -1448,6 +1592,451 @@ async function askQuestionReal(q){
   msgs.scrollTop=msgs.scrollHeight;
 }
 window.askQuestion = askQuestionReal;
+
+/* =============== 3D PITCH =============== */
+const PITCH_POS = {
+  GK:{x:0,z:-29},
+  RCB:{x:9,z:-22}, LCB:{x:-9,z:-22}, CB:{x:0,z:-22},
+  RB:{x:22,z:-16}, LB:{x:-22,z:-16},
+  RWB:{x:24,z:-8}, LWB:{x:-24,z:-8},
+  RDMF:{x:10,z:-10}, LDMF:{x:-10,z:-10}, DMF:{x:0,z:-12},
+  RCMF:{x:10,z:-2}, LCMF:{x:-10,z:-2}, CMF:{x:0,z:-2},
+  RAMF:{x:18,z:6}, LAMF:{x:-18,z:6}, AMF:{x:0,z:8}, AM:{x:0,z:8},
+  RW:{x:24,z:14}, LW:{x:-24,z:14},
+  CF:{x:0,z:22}, ST:{x:0,z:22},
+};
+const PITCH_FALLBACK_ROWS = [
+  {z:-29, count:1}, {z:-20, count:4}, {z:-4, count:3}, {z:18, count:3}
+];
+function pitchPlayerSlot(pl, idx, total){
+  const p = PITCH_POS[(pl.position||'').toUpperCase()];
+  if(p) return {x: p.x, z: p.z};
+  const row = idx<1?0:idx<5?1:idx<8?2:3;
+  const def = PITCH_FALLBACK_ROWS[row];
+  const i = idx<1?0:idx<5?(idx-1):idx<8?(idx-5):(idx-8);
+  const x = (-30 + (60/(def.count+1))*(i+1));
+  return {x, z: def.z};
+}
+function pitchAssignSlots(pool){
+  // Pass 1: resolve base slots for each player
+  const slots = pool.map((pl, i) => pitchPlayerSlot(pl, i, pool.length));
+
+  // Pass 2: detect collisions and spread them laterally
+  const buckets = new Map();
+  slots.forEach((s, i) => {
+    const key = `${Math.round(s.x*10)}_${Math.round(s.z*10)}`;
+    if(!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(i);
+  });
+  buckets.forEach(idxList => {
+    if(idxList.length <= 1) return;
+    const n = idxList.length;
+    const spread = 4; // total width of jitter for the group
+    idxList.forEach((idx, k) => {
+      const offset = (k - (n-1)/2) * spread;
+      slots[idx] = { x: slots[idx].x + offset, z: slots[idx].z };
+    });
+  });
+
+  // Pass 3: ensure pitch boundaries
+  return slots.map(s => ({
+    x: Math.max(-46, Math.min(46, s.x)),
+    z: Math.max(-31, Math.min(31, s.z)),
+  }));
+}
+const _pitch = {
+  mode:'form', cam:'broadcast',
+  renderer:null, scene:null, camera:null, container:null,
+  playerGroups:[], pickables:[], hovered:null, selected:null,
+  raycaster:null, mouse:null,
+  spherical:{r:78, phi:Math.PI/3.6, theta:Math.PI},
+  target:(window.THREE ? new THREE.Vector3(0,0,4) : null),
+  dragging:false, lastX:0, lastY:0,
+  rafId:null, dirty:true
+};
+function pitchRingColor(pl, mode){
+  if(mode==='xg')   return 0x22D3EE;
+  if(mode==='risk') return pl.losses>=8 ? 0xB42318 : pl.losses>=4 ? 0xB8860B : 0x1E7A3A;
+  return pl.score>=75 ? 0x1E7A3A : pl.score>=60 ? 0xB8860B : 0xB42318;
+}
+const PITCH_CAM_PRESETS = {
+  broadcast: {r:78, phi:Math.PI/3.6, theta:Math.PI},
+  iso:       {r:90, phi:Math.PI/3.2, theta:Math.PI*1.18},
+  top:       {r:90, phi:0.05,         theta:Math.PI},
+  side:      {r:80, phi:Math.PI/2.2,  theta:Math.PI*1.5},
+};
+function pitchUpdateCamera(){
+  if(!_pitch.camera) return;
+  const s = _pitch.spherical;
+  s.phi = Math.max(0.04, Math.min(Math.PI/2.05, s.phi));
+  s.r   = Math.max(28, Math.min(140, s.r));
+  const sinP = Math.sin(s.phi);
+  const x = _pitch.target.x + s.r*sinP*Math.sin(s.theta);
+  const y = _pitch.target.y + s.r*Math.cos(s.phi);
+  const z = _pitch.target.z + s.r*sinP*Math.cos(s.theta);
+  _pitch.camera.position.set(x,y,z);
+  _pitch.camera.lookAt(_pitch.target);
+  _pitch.dirty = true;
+}
+function renderPitch3D(){
+  if(!window.THREE) return;
+  if(!_pitch.target) _pitch.target = new THREE.Vector3(0,0,4);
+  const c = document.getElementById('pitch3d-canvas');
+  if(!c) return;
+  const w = c.clientWidth || 1100, h = c.clientHeight || 540;
+  if(w === 0 || h === 0) return; // tab not visible
+
+  if(_pitch.rafId){ cancelAnimationFrame(_pitch.rafId); _pitch.rafId = null; }
+  if(_pitch.renderer){
+    try{ _pitch.renderer.dispose(); }catch(e){}
+    if(_pitch.renderer.domElement && _pitch.renderer.domElement.parentNode){
+      _pitch.renderer.domElement.parentNode.removeChild(_pitch.renderer.domElement);
+    }
+  }
+  _pitch.playerGroups = []; _pitch.pickables = []; _pitch.hovered = null;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0d1014);
+  const camera = new THREE.PerspectiveCamera(32, w/h, 0.1, 500);
+
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(w,h);
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  c.appendChild(renderer.domElement);
+  renderer.domElement.style.display='block';
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.7));
+  const dl=new THREE.DirectionalLight(0xffffff,0.65);
+  dl.position.set(20,60,-10); dl.castShadow=true;
+  dl.shadow.mapSize.set(2048,2048);
+  dl.shadow.camera.left=-60; dl.shadow.camera.right=60;
+  dl.shadow.camera.top=60; dl.shadow.camera.bottom=-60;
+  dl.shadow.camera.near=1; dl.shadow.camera.far=200; dl.shadow.bias=-0.0005;
+  scene.add(dl);
+
+  const pitch = new THREE.Mesh(
+    new THREE.PlaneGeometry(100,66),
+    new THREE.MeshStandardMaterial({color:0x2a4a35, roughness:0.95, metalness:0})
+  );
+  pitch.rotation.x=-Math.PI/2; pitch.receiveShadow=true; scene.add(pitch);
+
+  const lineMat = new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:0.72});
+  const addLine=(pts)=>{const g=new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(p[0],0.02,p[1])));scene.add(new THREE.Line(g,lineMat));};
+  addLine([[-50,-33],[50,-33],[50,33],[-50,33],[-50,-33]]);
+  addLine([[-50,0],[50,0]]);
+  const cc=[]; for(let i=0;i<=64;i++){const a=(i/64)*Math.PI*2; cc.push([Math.cos(a)*9.15,Math.sin(a)*9.15]);} addLine(cc);
+  addLine([[-20.15,-33],[-20.15,-16.5],[20.15,-16.5],[20.15,-33]]);
+  addLine([[-20.15,33],[-20.15,16.5],[20.15,16.5],[20.15,33]]);
+  addLine([[-9.16,-33],[-9.16,-27.5],[9.16,-27.5],[9.16,-33]]);
+  addLine([[-9.16,33],[-9.16,27.5],[9.16,27.5],[9.16,33]]);
+  addLine([[-3.66,-33],[-3.66,-34],[3.66,-34],[3.66,-33]]);
+  addLine([[-3.66,33],[-3.66,34],[3.66,34],[3.66,33]]);
+
+  const pool = (window.MATCH_PLAYERS||MATCH_PLAYERS||[]).slice().sort((a,b)=>(b.minutes||0)-(a.minutes||0)).slice(0,11);
+  const slots = pitchAssignSlots(pool);
+  pool.forEach((pl, idx)=>{
+    const pos = slots[idx];
+    const grp = new THREE.Group();
+    grp.position.set(pos.x, 0, pos.z);
+
+    const cylScale = _pitch.mode==='xg' ? 1+Math.min(pl.xg||0,2)*0.9 : 1;
+    const cylH = 1.5*cylScale, cylR = 0.5*Math.min(cylScale,1.6);
+    const ringColor = pitchRingColor(pl, _pitch.mode);
+
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(cylR,cylR,cylH,28),
+      new THREE.MeshStandardMaterial({color:0xfafaf7, roughness:0.55, metalness:0.05})
+    );
+    body.position.y=cylH/2; body.castShadow=true; body.receiveShadow=true; grp.add(body);
+
+    const band = new THREE.Mesh(
+      new THREE.CylinderGeometry(cylR*1.005,cylR*1.005,0.16*cylScale,28),
+      new THREE.MeshStandardMaterial({color:0x0A0A0B, roughness:0.7})
+    );
+    band.position.y=cylH*0.55; grp.add(band);
+
+    const headR = 0.42*Math.min(cylScale,1.4);
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(headR,20,14),
+      new THREE.MeshStandardMaterial({color:0xefe6dc, roughness:0.6})
+    );
+    head.position.y=cylH+headR+0.02; head.castShadow=true; grp.add(head);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(cylR*1.18, cylR*1.55, 36),
+      new THREE.MeshBasicMaterial({color:ringColor, side:THREE.DoubleSide, transparent:true, opacity:0.92})
+    );
+    ring.rotation.x=-Math.PI/2; ring.position.y=0.04; grp.add(ring);
+
+    const name = pl.player_name || pl.name || '—';
+    const initials = name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+    const sc = document.createElement('canvas');
+    sc.width=128; sc.height=64;
+    const sx = sc.getContext('2d');
+    sx.fillStyle='rgba(10,10,11,0.88)';
+    sx.font='bold 36px Manrope, sans-serif';
+    const tw = sx.measureText(initials).width;
+    const padX=10, bw=tw+padX*2, bh=44, bx=(128-bw)/2, by=(64-bh)/2, rr=6;
+    sx.beginPath();
+    sx.moveTo(bx+rr,by); sx.lineTo(bx+bw-rr,by); sx.quadraticCurveTo(bx+bw,by,bx+bw,by+rr);
+    sx.lineTo(bx+bw,by+bh-rr); sx.quadraticCurveTo(bx+bw,by+bh,bx+bw-rr,by+bh);
+    sx.lineTo(bx+rr,by+bh); sx.quadraticCurveTo(bx,by+bh,bx,by+bh-rr);
+    sx.lineTo(bx,by+rr); sx.quadraticCurveTo(bx,by,bx+rr,by); sx.closePath(); sx.fill();
+    sx.fillStyle='#fff'; sx.textAlign='center'; sx.textBaseline='middle';
+    sx.fillText(initials,64,33);
+    const tex = new THREE.CanvasTexture(sc); tex.minFilter=THREE.LinearFilter;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+    sprite.scale.set(4,2,1); sprite.position.y=cylH+headR*2+1.5; grp.add(sprite);
+
+    grp.userData = { player: pl, ring, body, cylH, cylR };
+    body.userData.pickGroup = grp;
+    head.userData.pickGroup = grp;
+    _pitch.playerGroups.push(grp);
+    _pitch.pickables.push(body, head);
+
+    scene.add(grp);
+  });
+
+  // Opponents
+  [{x:0,z:29},{x:-9,z:22},{x:9,z:22},{x:-20,z:16},{x:20,z:16},
+   {x:-10,z:8},{x:10,z:8},{x:-18,z:-4},{x:0,z:-8},{x:18,z:-4},{x:0,z:-18}
+  ].forEach(p=>{
+    const grp=new THREE.Group(); grp.position.set(p.x,0,p.z);
+    const cyl=new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45,0.45,1.4,20),
+      new THREE.MeshStandardMaterial({color:0x2a3640,roughness:0.7,transparent:true,opacity:0.65})
+    );
+    cyl.position.y=0.7; cyl.castShadow=true; grp.add(cyl);
+    const head=new THREE.Mesh(
+      new THREE.SphereGeometry(0.36,16,12),
+      new THREE.MeshStandardMaterial({color:0x4a5560,roughness:0.6,transparent:true,opacity:0.65})
+    );
+    head.position.y=1.8; grp.add(head);
+    scene.add(grp);
+  });
+
+  _pitch.renderer = renderer; _pitch.scene = scene; _pitch.camera = camera; _pitch.container = c;
+  _pitch.raycaster = new THREE.Raycaster(); _pitch.mouse = new THREE.Vector2();
+  pitchApplyCamPreset(_pitch.cam, true);
+
+  const dom = renderer.domElement;
+  const onDown = (e)=>{
+    _pitch.dragging = true;
+    _pitch.lastX = e.clientX; _pitch.lastY = e.clientY;
+    dom.setPointerCapture && dom.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e)=>{
+    const rect = dom.getBoundingClientRect();
+    if(_pitch.dragging){
+      const dx = e.clientX - _pitch.lastX, dy = e.clientY - _pitch.lastY;
+      _pitch.lastX = e.clientX; _pitch.lastY = e.clientY;
+      _pitch.spherical.theta -= dx * 0.006;
+      _pitch.spherical.phi   -= dy * 0.005;
+      pitchUpdateCamera();
+      pitchHideTooltip();
+      return;
+    }
+    _pitch.mouse.x = ((e.clientX - rect.left)/rect.width)*2 - 1;
+    _pitch.mouse.y = -((e.clientY - rect.top)/rect.height)*2 + 1;
+    _pitch.raycaster.setFromCamera(_pitch.mouse, _pitch.camera);
+    const hits = _pitch.raycaster.intersectObjects(_pitch.pickables, false);
+    const grp = hits.length ? hits[0].object.userData.pickGroup : null;
+    pitchSetHover(grp, e.clientX - rect.left, e.clientY - rect.top);
+  };
+  const onUp = (e)=>{
+    _pitch.dragging = false;
+    dom.releasePointerCapture && dom.releasePointerCapture(e.pointerId);
+  };
+  const onLeave = ()=>{ _pitch.dragging = false; pitchSetHover(null); };
+  const onWheel = (e)=>{
+    e.preventDefault();
+    _pitch.spherical.r *= (1 + e.deltaY * 0.0015);
+    pitchUpdateCamera();
+  };
+  const onClick = (e)=>{
+    const rect = dom.getBoundingClientRect();
+    _pitch.mouse.x = ((e.clientX - rect.left)/rect.width)*2 - 1;
+    _pitch.mouse.y = -((e.clientY - rect.top)/rect.height)*2 + 1;
+    _pitch.raycaster.setFromCamera(_pitch.mouse, _pitch.camera);
+    const hits = _pitch.raycaster.intersectObjects(_pitch.pickables, false);
+    const grp = hits.length ? hits[0].object.userData.pickGroup : null;
+    pitchSetSelected(grp);
+  };
+  dom.addEventListener('pointerdown', onDown);
+  dom.addEventListener('pointermove', onMove);
+  dom.addEventListener('pointerup', onUp);
+  dom.addEventListener('pointerleave', onLeave);
+  dom.addEventListener('wheel', onWheel, {passive:false});
+  dom.addEventListener('click', onClick);
+
+  const animate = ()=>{
+    _pitch.rafId = requestAnimationFrame(animate);
+    if(_pitch.selected && _pitch.selected.userData.ring){
+      const t = performance.now()*0.004;
+      const k = 1 + Math.sin(t)*0.12;
+      _pitch.selected.userData.ring.scale.set(k,k,1);
+      _pitch.dirty = true;
+    }
+    if(_pitch.dirty){
+      renderer.render(scene, camera);
+      _pitch.dirty = false;
+    }
+  };
+  animate();
+}
+function pitchSetHover(grp, mx, my){
+  if(_pitch.hovered === grp) return;
+  if(_pitch.hovered && _pitch.hovered !== _pitch.selected){
+    _pitch.hovered.userData.body.material.emissive = new THREE.Color(0x000000);
+  }
+  _pitch.hovered = grp;
+  if(grp){
+    grp.userData.body.material.emissive = new THREE.Color(0x223344);
+    pitchShowTooltip(grp.userData.player, mx, my);
+    _pitch.container.style.cursor = 'pointer';
+  } else {
+    pitchHideTooltip();
+    _pitch.container.style.cursor = '';
+  }
+  _pitch.dirty = true;
+}
+function pitchSetSelected(grp){
+  if(_pitch.selected && _pitch.selected !== grp){
+    _pitch.selected.userData.ring.scale.set(1,1,1);
+  }
+  if(_pitch.selected === grp){ _pitch.selected = null; return; }
+  _pitch.selected = grp;
+  _pitch.dirty = true;
+}
+function pitchShowTooltip(pl, mx, my){
+  const tt = document.getElementById('pitch-tooltip');
+  if(!tt) return;
+  const scoreCls = pl.score>=75?'good':pl.score>=60?'warn':'bad';
+  const lossCls  = (pl.losses||0)>=8?'bad':(pl.losses||0)>=4?'warn':'good';
+  tt.innerHTML = `
+    <div class="name">${pl.player_name||pl.name||'—'}</div>
+    <div class="pos">${abbrPos(pl.position)} · ${pl.minutes||0}'</div>
+    <div class="grid">
+      <span class="k"><abbr title="Scor compus 0–100">Score</abbr></span><span class="v ${scoreCls}">${(pl.score||0).toFixed(1)}</span>
+      <span class="k"><abbr title="Expected Goals">xG</abbr></span><span class="v">${(pl.xg||0).toFixed(2)}</span>
+      <span class="k"><abbr title="Goluri / Assist-uri">G / A</abbr></span><span class="v">${pl.goals||0} / ${pl.assists||0}</span>
+      <span class="k"><abbr title="Procent pase reușite">Pass %</abbr></span><span class="v">${pl.pass_pct||0}</span>
+      <span class="k"><abbr title="Procent dueluri câștigate">Duels %</abbr></span><span class="v">${pl.duels_pct||0}</span>
+      <span class="k"><abbr title="Pierderi de minge totale">Losses</abbr></span><span class="v ${lossCls}">${pl.losses||0}</span>
+    </div>`;
+  // Decide placement based on space inside the container
+  const wrap = _pitch.container;
+  const wRect = wrap.getBoundingClientRect();
+  const ttW = 220, ttH = 200; // approximate
+  // mx/my are container-relative
+  let placement = 'above';
+  if (my < ttH + 16) placement = 'below';
+  else if (my > wRect.height - ttH - 16) placement = 'above';
+  // also check horizontal overflow
+  if (mx < ttW/2 + 16) placement = my < wRect.height/2 ? 'right' : 'right';
+  else if (mx > wRect.width - ttW/2 - 16) placement = my < wRect.height/2 ? 'left' : 'left';
+
+  tt.classList.remove('above','below','left','right');
+  tt.classList.add(placement);
+  tt.style.left = mx+'px';
+  tt.style.top  = my+'px';
+  tt.classList.add('show');
+}
+function pitchHideTooltip(){
+  const tt = document.getElementById('pitch-tooltip');
+  if(tt) tt.classList.remove('show');
+}
+function pitchApplyCamPreset(name, instant){
+  const p = PITCH_CAM_PRESETS[name]; if(!p) return;
+  _pitch.cam = name;
+  document.querySelectorAll('.pitch-cam-snap button').forEach(b=>b.classList.toggle('active', b.dataset.cam===name));
+  const lbl = document.getElementById('pitch-cam-label');
+  if(lbl) lbl.textContent = name.toUpperCase();
+  if(instant){
+    Object.assign(_pitch.spherical, p);
+    pitchUpdateCamera();
+    return;
+  }
+  const start = {...(_pitch.spherical)}; const t0 = performance.now(); const dur = 520;
+  const step = ()=>{
+    const t = Math.min(1, (performance.now()-t0)/dur);
+    const e = t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+    _pitch.spherical.r     = start.r     + (p.r    -start.r    )*e;
+    _pitch.spherical.phi   = start.phi   + (p.phi  -start.phi  )*e;
+    _pitch.spherical.theta = start.theta + (p.theta-start.theta)*e;
+    pitchUpdateCamera();
+    if(t<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function setPitchCam(name){ pitchApplyCamPreset(name, false); }
+function togglePitchFullscreen(){
+  const card = document.getElementById('pitch-card-wrap');
+  if(!card) return;
+  card.classList.toggle('fullscreen');
+  // re-render to fit new size
+  setTimeout(()=>renderPitch3D(), 30);
+  // ESC to exit fullscreen
+  if(card.classList.contains('fullscreen')){
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', _pitchEscHandler);
+  } else {
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', _pitchEscHandler);
+  }
+}
+function _pitchEscHandler(e){
+  if(e.key === 'Escape'){
+    const card = document.getElementById('pitch-card-wrap');
+    if(card && card.classList.contains('fullscreen')) togglePitchFullscreen();
+  }
+}
+// Re-render on window resize (debounced)
+let _pitchResizeT = null;
+window.addEventListener('resize', () => {
+  const card = document.getElementById('pitch-card-wrap');
+  if(!card || card.style.display === 'none') return;
+  clearTimeout(_pitchResizeT);
+  _pitchResizeT = setTimeout(() => {
+    if(typeof renderPitch3D === 'function') renderPitch3D();
+  }, 200);
+});
+function showPitch3D(){
+  const launcher = document.getElementById('pitch-launcher');
+  const card = document.getElementById('pitch-card-wrap');
+  if(launcher) launcher.style.display = 'none';
+  if(card) card.style.display = '';
+  setTimeout(()=>renderPitch3D(), 50);
+}
+function hidePitch3D(){
+  const launcher = document.getElementById('pitch-launcher');
+  const card = document.getElementById('pitch-card-wrap');
+  if(launcher) launcher.style.display = '';
+  if(card) card.style.display = 'none';
+  if(_pitch.rafId){ cancelAnimationFrame(_pitch.rafId); _pitch.rafId = null; }
+  if(_pitch.renderer){
+    try{ _pitch.renderer.dispose(); }catch(e){}
+    if(_pitch.renderer.domElement?.parentNode){
+      _pitch.renderer.domElement.parentNode.removeChild(_pitch.renderer.domElement);
+    }
+    _pitch.renderer = null;
+  }
+}
+function setPitchMode(mode){
+  _pitch.mode = mode;
+  document.querySelectorAll('.pitch-toggle button').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  renderPitch3D();
+}
+function pitchUpdateOpponentLabel(){
+  const sel = document.getElementById('match-select');
+  const opt = sel ? sel.options[sel.selectedIndex] : null;
+  const oppEl = document.getElementById('pitch-opp');
+  if(opt && oppEl){
+    const m = opt.text.match(/(?:vs|@)\s+([^()]+)/i);
+    if(m) oppEl.textContent = m[1].trim().toUpperCase();
+  }
+}
 
 /* =============== INIT =============== */
 renderRecordPills();
