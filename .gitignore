@@ -26,6 +26,7 @@ local_settings.py
 
 # Claude Code metadata
 .claude/
+CLAUDE.md
 
 # DB (uncomment if you want SQLite excluded)
 # *.sqlite3
